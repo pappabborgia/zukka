@@ -21,6 +21,12 @@ export default function CommunityRulesPage() {
         Points and credits are counted by Zukka. Playing in ways that only aim to collect points or credits (for example
         many very short plays) does not count, and points or credits gained that way can be cancelled.
       </p>
+      <h2>If you delete your account</h2>
+      <p>
+        Deleting your account deletes everything at once: your children&apos;s profiles and activity, and{" "}
+        <strong>all the games you created, including published ones</strong>. Published games disappear from the catalogue
+        and stop working for every player within a few minutes.
+      </p>
       <h2>Reports</h2>
       <p>Anyone can report a problem with a game. A person from our team looks at every report.</p>
       <LegalNote>Terms of use: ownership and licence of games created with AI; liability for published content; notice and action procedure (EU Digital Services Act); suspension of accounts.</LegalNote>

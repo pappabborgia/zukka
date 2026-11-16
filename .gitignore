@@ -11,3 +11,4 @@ test-results
 playwright-report
 /apps/play/src/generated/
 /apps/web/src/generated/
+*-debug.log

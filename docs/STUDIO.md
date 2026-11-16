@@ -49,7 +49,24 @@ aiDaily/{uid}_{giorno}          generazioni AI del giorno
 aiMonthly/{mese}                spesa AI stimata del mese
 ```
 
-Il sito dei giochi serve una versione da `/v/{gameId}/{versionId}`: legge Firestore con un service account **di sola
-lettura** e risponde con una cache di un anno (le versioni non cambiano), quindi Firestore viene letto una volta per
-versione, non per ogni partita. Un gioco in bozza si vede solo con il suo indirizzo, che contiene identificativi
-casuali, e solo dentro il sito Zukka.
+Il sito dei giochi serve una versione da `/v/{gameId}/{versionId}` con un service account **di sola lettura**:
+
+- il contenuto di una versione non cambia mai e resta in memoria sul server;
+- lo **stato** del gioco viene riletto al massimo ogni 2 minuti (`GAME_STATUS_TTL_SECONDS`): si servono solo
+  `draft`, `submitted`, `ai_reviewed`, `changes_requested` e `approved`;
+- browser e CDN tengono la risposta 60 secondi (`GAME_CDN_SECONDS`), senza servire copie scadute.
+
+Un gioco **rimosso, rifiutato o cancellato smette di essere servito entro circa 4 minuti**, senza bisogno di
+chiamate al momento della rimozione (verificato dal test "a removed, rejected or deleted game stops being served").
+
+**Letture Firestore**: al massimo 1 lettura dello stato per gioco ogni 2 minuti per istanza del server, solo
+mentre il gioco viene giocato, più 1 lettura per versione quando un'istanza la carica la prima volta. Un gioco
+giocato senza sosta tutto il giorno costa nel caso peggiore circa 30-90 letture l'ora (dipende da quante istanze
+Vercel usa); nel test con le famiglie restano poche migliaia di letture al giorno, sotto le 50.000 gratuite.
+
+Un gioco in bozza si vede solo con il suo indirizzo, che contiene identificativi casuali, e solo dentro il sito Zukka.
+
+## Cancellazione dell'account
+
+Per ora cancellare l'account cancella anche **tutti i giochi del genitore, pubblicati compresi** (scritto nelle regole
+della community e nella schermata di conferma).

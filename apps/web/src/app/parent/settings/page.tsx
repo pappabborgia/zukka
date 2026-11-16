@@ -63,6 +63,8 @@ export default async function SettingsPage() {
           <h2>Delete the account</h2>
           <p>
             This deletes your account, all your children&apos;s profiles and all their activity, at once and for good.
+            It also deletes <strong>all the games you created in the Studio, including published ones</strong>: they leave the
+            catalogue and stop working for every player within a few minutes.
           </p>
           <ActionForm action={deleteMyAccount} submitLabel="Delete everything" danger testId="delete-form">
             <label className="field">

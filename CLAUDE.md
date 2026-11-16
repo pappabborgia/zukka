@@ -11,7 +11,8 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 - `engines/<id>/template.html`: game engines; each reads everything from its CONFIG block (default config inline).
 - `packages/engines`: Zod schemas of the configs, config injection, quick-creation topics and builder, 700 KB limit.
 - Studio (`/studio`, parent area): quick games stored in Firestore `games/{id}/versions/{vid}` (config as JSON text);
-  the games origin serves `/v/{gameId}/{versionId}` with a year-long cache. See `docs/STUDIO.md`.
+  the games origin serves `/v/{gameId}/{versionId}` only while the game's status allows it (re-checked every 2 min,
+  60 s CDN cache): removed, rejected or deleted games stop within minutes. See `docs/STUDIO.md`.
 - AI questions: `lib/server/ai-questions.ts` (Claude Opus 5.5, structured output, refusal fallback), checks in
   `lib/ai-check.ts` (maths answers recomputed by code), limits and budget in `lib/server/ai-budget.ts` and `lib/config/studio.ts`.
 - `games/<id>/meta.json` (+ `game.html`, or `"engine"`): built-in games, bundled by `scripts/build-games.mjs`

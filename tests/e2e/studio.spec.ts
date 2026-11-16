@@ -103,3 +103,47 @@ test("the Studio is behind the parent PIN", async ({ page }) => {
   await page.goto("/studio");
   await page.waitForURL("**/parent/unlock**");
 });
+
+/** Changes a game's status directly in the Firestore emulator, as the admin pages will. */
+async function setStatus(gameId: string, status: string) {
+  const url = `http://127.0.0.1:8080/v1/projects/demo-zukka/databases/(default)/documents/games/${gameId}?updateMask.fieldPaths=status`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: { status: { stringValue: status } } }),
+  });
+  expect(res.ok).toBe(true);
+}
+
+test("a removed, rejected or deleted game stops being served", async ({ page, request }) => {
+  await newParentInStudio(page);
+  const urls: string[] = [];
+  for (const title of ["Removed Cup", "Rejected Cup", "Deleted Cup"]) {
+    await page.goto("/studio/new/school-cup");
+    await fillQuickForm(page, { title, team: "Blue Bees", topics: ["borrowing"] });
+    await page.getByRole("button", { name: "Create the game" }).click();
+    await page.waitForURL(/\/studio\/games\/[A-Za-z0-9]+$/);
+    urls.push((await page.getByTestId("game-frame").getAttribute("src"))!);
+  }
+  const gameId = (u: string) => new URL(u).pathname.split("/")[2];
+  for (const u of urls) {
+    const r = await request.get(u);
+    expect(r.status()).toBe(200);
+    expect(r.headers()["cache-control"]).toBe("public, max-age=60, s-maxage=60");
+  }
+
+  await setStatus(gameId(urls[0]), "removed");
+  await setStatus(gameId(urls[1]), "rejected");
+  await page.goto(`/studio/games/${gameId(urls[2])}`);
+  await page.getByText("Delete this game").click();
+  await page.getByRole("button", { name: "Yes, delete it" }).click();
+  await page.waitForURL("**/studio");
+
+  await page.waitForTimeout(1500); // longer than the status check interval used in tests
+  for (const u of urls) expect((await request.get(u)).status(), u).toBe(404);
+
+  // back in review (changes requested) it is served again, for the creator's preview
+  await setStatus(gameId(urls[1]), "changes_requested");
+  await page.waitForTimeout(1500);
+  expect((await request.get(urls[1])).status()).toBe(200);
+});
