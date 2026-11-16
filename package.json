@@ -1,21 +1,31 @@
 {
   "name": "zukka",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "games": "node scripts/build-games.mjs",
     "dev": "npm run games && concurrently -n web,play \"npm run dev -w web\" \"npm run dev -w play\"",
     "build": "npm run games && npm run build -w play && npm run build -w web",
     "typecheck": "npm run games && tsc -p packages/game-protocol --noEmit && tsc -p apps/web --noEmit && tsc -p apps/play --noEmit",
     "test": "vitest run",
+    "test:emu": "firebase emulators:exec --only auth,firestore --project demo-zukka \"vitest run --config vitest.emu.config.ts\"",
+    "e2e": "firebase emulators:exec --only auth,firestore --project demo-zukka \"playwright test\"",
     "test:e2e": "playwright test",
-    "check:school-cup": "node scripts/check-school-cup.mjs"
+    "check:school-cup": "node scripts/check-school-cup.mjs",
+    "dev:emu": "firebase emulators:exec --only auth,firestore --project demo-zukka \"npm run dev\""
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@playwright/test": "1.63.0",
     "concurrently": "^9.2.1",
+    "firebase-tools": "^15.36.0",
     "typescript": "^5",
     "vitest": "^3.2.4"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

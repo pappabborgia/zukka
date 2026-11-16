@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/PumpkinMark";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { BUILTIN_CATALOG } from "@/generated/builtin-catalog";
 import { t, type Locale } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -7,10 +9,18 @@ import type { MessageKey } from "@/i18n/en";
 const subjectLabel = (s: string, locale: Locale = "en") =>
   t((`subject.${s}` as MessageKey), {}, locale);
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   const games = BUILTIN_CATALOG.filter((g) => g.listed);
+  const deleted = (await searchParams).deleted === "1";
   return (
+    <>
+    <SiteHeader />
     <main className="page">
+      {deleted && (
+        <p className="form-ok" role="status">
+          Your account and all its data have been deleted.
+        </p>
+      )}
       <div className="hero">
         <Logo size={64} />
         <p>{t("site.tagline")}</p>
@@ -35,5 +45,7 @@ export default function Home() {
         ))}
       </div>
     </main>
+    <SiteFooter />
+    </>
   );
 }

@@ -33,7 +33,14 @@ export default defineConfig({
     {
       command: "npm run start -w web",
       url: "http://localhost:3000/",
-      env: { NEXT_PUBLIC_PLAY_ORIGIN: "http://127.0.0.1:3001" },
+      env: {
+        NEXT_PUBLIC_PLAY_ORIGIN: "http://127.0.0.1:3001",
+        APP_ORIGIN: "http://localhost:3000",
+        // run through `npm run e2e`, which starts the Firebase emulators
+        FIREBASE_PROJECT_ID: "demo-zukka",
+        FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
+        FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",
+      },
       reuseExistingServer: !process.env.CI,
     },
   ],

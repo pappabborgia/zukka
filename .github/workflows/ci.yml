@@ -8,19 +8,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint -w web
       - run: npm test
+      - run: npm run test:emu
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run check:school-cup
-      - run: npx playwright test --trace off
+      - run: npx firebase emulators:exec --only auth,firestore --project demo-zukka "npx playwright test --trace off"
         env:
           CI: "1"

@@ -1,7 +1,14 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "server-only": fileURLToPath(new URL("./test-stubs/server-only.ts", import.meta.url)),
+    },
+  },
   test: {
-    include: ["packages/**/test/**/*.test.ts", "apps/**/test/**/*.test.ts", "scripts/**/*.test.ts"],
+    include: ["packages/**/test/**/*.test.ts", "apps/**/test/unit/**/*.test.ts"],
+    env: { SESSION_SECRET: "test-secret-test-secret-test-secret-123" },
   },
 });

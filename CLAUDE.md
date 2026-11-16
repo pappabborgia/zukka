@@ -10,7 +10,11 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 - `packages/game-protocol`: event schema (Zod), host-side play session, game response headers, game SDK snippet.
 - `games/<id>/game.html` + `meta.json`: built-in games, bundled by `scripts/build-games.mjs`
   into `apps/play/src/generated` and `apps/web/src/generated` (both gitignored, regenerated on dev/build).
-- `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation and how to verify it).
+- `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation), `FIREBASE.md` (data model, setup),
+  `REVIEW-CHECKLIST.md` (input for the AI review).
+- `apps/web/src/lib/server/`: server-only code (Firebase Admin, session cookies, accounts, PIN, rate limits).
+  Pages and server actions take the account id from the session (`requireAccount`, `requireParent`), never from the browser.
+- `firebase/firestore.rules`: deny everything; browsers never talk to Firestore.
 
 ## Rules to keep
 
@@ -18,11 +22,13 @@ UI and games are in English (British). Code, comments and commit messages in Eng
   main site `frame-src` limited to the games origin. Any change there needs the e2e sandbox tests green.
 - A game receives no player data. The host accepts only the three events and measures time itself.
 - Points and credits are computed server side only (later phases).
-- Children never type free text that others can see.
+- Children never type free text that others can see. Child nicknames come only from `lib/nicknames.ts`.
+- The parent's email is never stored in Firestore nor shown on any page other than their own sign-in screens.
+- Answers the child checks by themselves never count (see `docs/GAME-FORMAT.md`).
 - Next.js here is 16.x: read `node_modules/next/dist/docs/` before using an API you are unsure of.
 
 ## Checks
 
-- `npm test` (Vitest unit tests), `npm run typecheck`, `npm run lint -w web`
+- `npm test` (Vitest unit tests), `npm run test:emu` (Firestore/Auth emulators), `npm run typecheck`, `npm run lint -w web`
 - `npm run check:school-cup` (every subject, year and level makes valid questions)
-- `npm run build && npx playwright test` (sandbox and School Cup end to end). Stop old `next start` servers first.
+- `npm run build && npm run e2e` (accounts, sandbox and School Cup end to end, on the emulators). Stop old `next start` servers first.

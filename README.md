@@ -2,7 +2,7 @@
 
 Giochi didattici per bambini di 6-9 anni, creati dai genitori con l'aiuto dell'AI.
 
-**Stato: Fase 1** (formato dei giochi, eventi, sandbox, School Cup come primo gioco).
+**Stato: Fase 2** (account genitore, profili dei figli, area genitore). Fase 1: formato dei giochi, eventi, sandbox, School Cup.
 
 ## Struttura
 
@@ -12,16 +12,20 @@ Giochi didattici per bambini di 6-9 anni, creati dai genitori con l'aiuto dell'A
 | `apps/play` | il sito separato che serve i giochi (`/g/<id>`) |
 | `packages/game-protocol` | eventi dei giochi, validazione, header di sicurezza |
 | `games/` | giochi inclusi: `school-cup` e due giochi sonda per i test |
-| `docs/` | formato dei giochi e isolamento |
+| `docs/` | formato dei giochi, isolamento, Firebase, controlli della revisione |
+| `firebase/` | regole di Firestore |
 
 ## Provare in locale
 
-Serve Node.js 20 o più recente.
+Servono Node.js 20+ e Java 11+ (per gli emulatori Firebase).
 
 ```bash
 npm install
-npm run dev
+npm run dev:emu
 ```
+
+Gli emulatori sostituiscono Firebase: non serve nessun progetto. Le email non partono, il link di accesso
+compare direttamente nella pagina.
 
 - Sito: http://localhost:3000
 - Gioco con il registro degli eventi: http://localhost:3000/play/school-cup?debug=1
@@ -32,15 +36,16 @@ Test:
 
 ```bash
 npm test                       # test unitari
+npm run test:emu               # dati, regole e accesso, sugli emulatori
 npm run check:school-cup       # tutte le domande di School Cup
-npm run build && npx playwright test   # sandbox e partita completa nel browser
+npm run build && npm run e2e   # account, sandbox e partite nel browser
 ```
 
 ## Deploy su Vercel (due progetti dallo stesso repository)
 
 | Progetto | Root Directory | Variabile d'ambiente |
 |---|---|---|
-| `zukka` | `apps/web` | `NEXT_PUBLIC_PLAY_ORIGIN=https://zukka-play.vercel.app` |
+| `zukka` | `apps/web` | `NEXT_PUBLIC_PLAY_ORIGIN=https://zukka-play.vercel.app` e le variabili Firebase (vedi `docs/FIREBASE.md`) |
 | `zukka-play` | `apps/play` | `MAIN_ORIGINS=https://zukka-gules.vercel.app` |
 
 I file `apps/*/vercel.json` impostano già installazione e build.

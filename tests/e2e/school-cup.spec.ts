@@ -1,4 +1,11 @@
 import { expect, test, type FrameLocator, type Page } from "@playwright/test";
+import { newFamily } from "./helpers";
+
+// playing needs a signed-in family; locally the emulators provide it (npm run e2e)
+test.skip(!!process.env.E2E_BASE_URL, "needs a test account on the deployed site");
+test.beforeEach(async ({ page }) => {
+  await newFamily(page);
+});
 
 /** Clicks through one School Cup match. Wrong or right does not matter: the events are what we check. */
 async function playOneMatch(game: FrameLocator, page: Page) {
