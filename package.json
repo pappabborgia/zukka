@@ -15,7 +15,8 @@
     "e2e": "firebase emulators:exec --only auth,firestore --project demo-zukka \"playwright test\"",
     "test:e2e": "playwright test",
     "check:school-cup": "node scripts/check-school-cup.mjs",
-    "dev:emu": "firebase emulators:exec --only auth,firestore --project demo-zukka \"npm run dev\""
+    "dev:emu": "firebase emulators:exec --only auth,firestore --project demo-zukka \"npm run dev\"",
+    "check:server-deps": "cd apps/web && node --no-experimental-require-module -e \"require('firebase-admin/app');require('firebase-admin/auth');require('firebase-admin/firestore');console.log('firebase-admin loads without require(esm)')\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",
@@ -27,5 +28,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "overrides": {
+    "jwks-rsa": "3.2.2"
   }
 }
