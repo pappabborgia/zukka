@@ -12,7 +12,9 @@ UI and games are in English (British). Code, comments and commit messages in Eng
   into `apps/play/src/generated` and `apps/web/src/generated` (both gitignored, regenerated on dev/build).
 - `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation), `FIREBASE.md` (data model, setup),
   `REVIEW-CHECKLIST.md` (input for the AI review), `PLAN-FIRESTORE.md` (ledgers, leaderboards and quotas for phases 7-9).
-- Emails: sign-in links are generated with the Admin SDK and sent with Resend (`lib/server/mailer.ts`); Firebase sends no email.
+- Emails: with RESEND_API_KEY + EMAIL_FROM, sign-in links are generated with the Admin SDK and sent with Resend
+  (`lib/server/mailer.ts`); without them Firebase sends the email (few per day on the free plan).
+- `/api/cron/nightly` (Vercel Cron, CRON_SECRET): deletes expired rate-limit counters (no Firestore TTL on the free plan).
 - `apps/web/src/lib/server/`: server-only code (Firebase Admin, session cookies, accounts, PIN, rate limits).
   Pages and server actions take the account id from the session (`requireAccount`, `requireParent`), never from the browser.
 - `firebase/firestore.rules`: deny everything; browsers never talk to Firestore.
