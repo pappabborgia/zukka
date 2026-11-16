@@ -96,11 +96,16 @@ export async function lockParentArea(): Promise<void> {
 
 /* ---------- email waiting for its link ---------- */
 
-export async function setPendingEmail(email: string): Promise<void> {
-  (await cookies()).set(PENDING_COOKIE, signToken("pending", { email }, 3600), { ...base(), maxAge: 3600 });
+/** devLink is set only in local development with the emulators (see mailer.devMailMode). */
+export async function setPendingEmail(email: string, devLink?: string): Promise<void> {
+  (await cookies()).set(PENDING_COOKIE, signToken("pending", devLink ? { email, devLink } : { email }, 3600), { ...base(), maxAge: 3600 });
+}
+
+export async function pendingSignIn(): Promise<{ email: string; devLink?: string } | null> {
+  const t = verifyToken<{ email: string; devLink?: string }>("pending", (await cookies()).get(PENDING_COOKIE)?.value);
+  return t ? { email: t.email, devLink: t.devLink } : null;
 }
 
 export async function pendingEmail(): Promise<string | null> {
-  const t = verifyToken<{ email: string }>("pending", (await cookies()).get(PENDING_COOKIE)?.value);
-  return t?.email ?? null;
+  return (await pendingSignIn())?.email ?? null;
 }

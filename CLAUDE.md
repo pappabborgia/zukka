@@ -11,7 +11,8 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 - `games/<id>/game.html` + `meta.json`: built-in games, bundled by `scripts/build-games.mjs`
   into `apps/play/src/generated` and `apps/web/src/generated` (both gitignored, regenerated on dev/build).
 - `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation), `FIREBASE.md` (data model, setup),
-  `REVIEW-CHECKLIST.md` (input for the AI review).
+  `REVIEW-CHECKLIST.md` (input for the AI review), `PLAN-FIRESTORE.md` (ledgers, leaderboards and quotas for phases 7-9).
+- Emails: sign-in links are generated with the Admin SDK and sent with Resend (`lib/server/mailer.ts`); Firebase sends no email.
 - `apps/web/src/lib/server/`: server-only code (Firebase Admin, session cookies, accounts, PIN, rate limits).
   Pages and server actions take the account id from the session (`requireAccount`, `requireParent`), never from the browser.
 - `firebase/firestore.rules`: deny everything; browsers never talk to Firestore.

@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAccount } from "@/lib/server/accounts";
-import { appOrigin } from "@/lib/server/env";
-import { completeSignIn, EmailLinkError, sendSignInEmail } from "@/lib/server/email-link";
+import { completeSignIn, createSignInLink, EmailLinkError } from "@/lib/server/email-link";
+import { devMailMode, sendEmail, signInEmail } from "@/lib/server/mailer";
 import { clientIp, safeNext } from "@/lib/server/guards";
 import { hit, LIMITS } from "@/lib/server/rate-limit";
 import { endSession, pendingEmail, setPendingEmail, startSession, unlockParentArea } from "@/lib/server/session";
@@ -29,13 +29,17 @@ export async function requestSignIn(_prev: FormState, form: FormData): Promise<F
     return { error: "Signing in is not available right now. Please try again later." };
   }
   const next = safeNext(form.get("next"), "/who");
+  let devLink: string | undefined;
   try {
-    await sendSignInEmail(email, `${appOrigin()}/auth/finish?next=${encodeURIComponent(next)}`);
+    const link = await createSignInLink(email, next);
+    if (devMailMode()) devLink = link; // local development with the emulators: shown on screen, never in production
+    else await sendEmail(signInEmail(email, link));
   } catch (e) {
     if (e instanceof EmailLinkError && e.code === "invalid_email") return { error: "Please type a valid email address." };
+    console.error("sign-in email not sent", e);
     return { error: "We could not send the email just now. Please try again in a few minutes." };
   }
-  await setPendingEmail(email);
+  await setPendingEmail(email, devLink);
   redirect("/login/sent");
 }
 

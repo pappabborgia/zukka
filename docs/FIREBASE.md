@@ -3,8 +3,10 @@
 ## Come è usato
 
 - **Firebase Authentication**: accesso dei genitori con un link via email (senza password).
-  Il link viene richiesto e completato **dal server** tramite l'API REST di Firebase: nel browser non gira codice
-  Firebase. Dopo l'accesso il server crea un *session cookie* Firebase (`httpOnly`, 14 giorni).
+  Il server **genera** il link con l'Admin SDK (`generateSignInWithEmailLink`) e **lo spedisce con Resend**:
+  Firebase non invia nessuna email, quindi il suo limite giornaliero di email non conta. Il link porta
+  direttamente a `/auth/finish` sul nostro sito. L'accesso si completa dal server (API REST di Firebase):
+  nel browser non gira codice Firebase. Dopo l'accesso il server crea un *session cookie* Firebase (`httpOnly`, 14 giorni).
 - **Cloud Firestore**: tutti i dati. Le regole (`firebase/firestore.rules`) **negano ogni accesso dal browser**:
   leggono e scrivono solo le route del server con l'Admin SDK, che controllano sempre l'account dalla sessione.
 
@@ -54,11 +56,20 @@ Test: `npm run test:emu` (dati e regole) e `npm run e2e` (browser).
 | `FIREBASE_PRIVATE_KEY` | `private_key` dal file JSON, così com'è (con i `\n`), segnala come **Sensitive** |
 | `SESSION_SECRET` | almeno 32 caratteri casuali, **Sensitive** |
 | `APP_ORIGIN` | `https://zukka-gules.vercel.app` |
+| `RESEND_API_KEY` | chiave API di Resend, **Sensitive** |
+| `EMAIL_FROM` | mittente su un dominio verificato in Resend, per esempio `Zukka <login@tuodominio.it>` |
+| `EMAIL_REPLY_TO` | facoltativa: indirizzo per le risposte |
 
 Poi **Redeploy** del progetto `zukka`.
 
-## Email di accesso
+## Email di accesso (Resend)
 
-Per ora le invia Firebase (mittente `noreply@<progetto>.firebaseapp.com`). Il piano gratuito ha un limite
-giornaliero di email: prima del test con le famiglie passiamo a Resend. Il server genererà il link con
-l'Admin SDK (`generateSignInWithEmailLink`) e lo invierà con Resend; il resto del flusso non cambia.
+1. Crea un account su https://resend.com e una **API key** con permesso "Sending access".
+2. **Domains** → aggiungi un dominio tuo e inserisci nel DNS i record che Resend indica (SPF, DKIM).
+   Senza dominio verificato Resend spedisce solo all'indirizzo del proprietario dell'account: va bene per una
+   prova, non per le famiglie.
+3. Lascia disattivati open e click tracking (sono disattivati di default).
+4. Su Vercel imposta `RESEND_API_KEY`, `EMAIL_FROM` ed eventualmente `EMAIL_REPLY_TO`.
+
+In locale, con gli emulatori e senza chiave Resend, l'email non parte e il link compare nella pagina
+"Check your email". Fuori dagli emulatori il link non viene mai mostrato a schermo.

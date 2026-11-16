@@ -15,7 +15,7 @@ import {
   updatePlayer,
   verifyPin,
 } from "../../src/lib/server/accounts";
-import { completeSignIn, emulatorOobCodes, sendSignInEmail } from "../../src/lib/server/email-link";
+import { completeSignIn, createSignInLink } from "../../src/lib/server/email-link";
 import { adminAuth, db } from "../../src/lib/server/firebase";
 import { hit } from "../../src/lib/server/rate-limit";
 import { POLICY_VERSION } from "../../src/lib/policies";
@@ -218,13 +218,20 @@ describe("rate limits", () => {
 });
 
 describe("email link sign-in", () => {
-  it("sends a code and signs the parent in with it, once", async () => {
-    await sendSignInEmail("parent@example.com", "http://localhost:3000/auth/finish");
-    const codes = (await emulatorOobCodes()).filter((c) => c.email === "parent@example.com");
-    expect(codes.length).toBe(1);
-    const { idToken, uid } = await completeSignIn("parent@example.com", codes[0].oobCode);
+  it("is generated on the server, points to our own page, and works once", async () => {
+    const link = new URL(await createSignInLink("parent@example.com", "/play/school-cup"));
+    expect(link.origin + link.pathname).toBe("http://localhost:3000/auth/finish");
+    expect(link.searchParams.get("next")).toBe("/play/school-cup");
+    const oobCode = link.searchParams.get("oobCode")!;
+    expect(oobCode.length).toBeGreaterThan(10);
+    const { idToken, uid } = await completeSignIn("parent@example.com", oobCode);
     expect(idToken.length).toBeGreaterThan(20);
     expect((await adminAuth().getUser(uid)).email).toBe("parent@example.com");
-    await expect(completeSignIn("parent@example.com", codes[0].oobCode)).rejects.toThrow("expired_or_used");
+    await expect(completeSignIn("parent@example.com", oobCode)).rejects.toThrow("expired_or_used");
+  });
+
+  it("does not work for another address", async () => {
+    const oobCode = new URL(await createSignInLink("one@example.com", "/")).searchParams.get("oobCode")!;
+    await expect(completeSignIn("two@example.com", oobCode)).rejects.toThrow();
   });
 });
