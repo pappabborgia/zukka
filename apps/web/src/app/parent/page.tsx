@@ -21,6 +21,9 @@ export default async function ParentPage() {
         <div className="row-between">
           <h1>Your children</h1>
           <div className="row-gap">
+            <Link href="/studio" className="btn">
+              🎨 Studio
+            </Link>
             <Link href="/parent/settings" className="btn btn-light">
               ⚙️ Settings
             </Link>

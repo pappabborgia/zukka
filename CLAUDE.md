@@ -8,7 +8,13 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 - `apps/web`: main site (Next.js App Router). Deployed as Vercel project "zukka".
 - `apps/play`: games origin. Serves only `/g/<id>` with strict headers. Vercel project "zukka-play".
 - `packages/game-protocol`: event schema (Zod), host-side play session, game response headers, game SDK snippet.
-- `games/<id>/game.html` + `meta.json`: built-in games, bundled by `scripts/build-games.mjs`
+- `engines/<id>/template.html`: game engines; each reads everything from its CONFIG block (default config inline).
+- `packages/engines`: Zod schemas of the configs, config injection, quick-creation topics and builder, 700 KB limit.
+- Studio (`/studio`, parent area): quick games stored in Firestore `games/{id}/versions/{vid}` (config as JSON text);
+  the games origin serves `/v/{gameId}/{versionId}` with a year-long cache. See `docs/STUDIO.md`.
+- AI questions: `lib/server/ai-questions.ts` (Claude Opus 5.5, structured output, refusal fallback), checks in
+  `lib/ai-check.ts` (maths answers recomputed by code), limits and budget in `lib/server/ai-budget.ts` and `lib/config/studio.ts`.
+- `games/<id>/meta.json` (+ `game.html`, or `"engine"`): built-in games, bundled by `scripts/build-games.mjs`
   into `apps/play/src/generated` and `apps/web/src/generated` (both gitignored, regenerated on dev/build).
 - `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation), `FIREBASE.md` (data model, setup),
   `REVIEW-CHECKLIST.md` (input for the AI review), `PLAN-FIRESTORE.md` (ledgers, leaderboards and quotas for phases 7-9).
@@ -33,5 +39,6 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 ## Checks
 
 - `npm test` (Vitest unit tests), `npm run test:emu` (Firestore/Auth emulators), `npm run typecheck`, `npm run lint -w web`
-- `npm run check:school-cup` (every subject, year and level makes valid questions)
+- `npm run check:school-cup` (every subject, year and level makes valid questions); `packages/engines/test` also plays
+  every quick-creation topic in a browser. A change to the School Cup generators needs `Q_GENERATORS` updated too.
 - `npm run build && npm run e2e` (accounts, sandbox and School Cup end to end, on the emulators). Stop old `next start` servers first.

@@ -19,6 +19,9 @@ accounts/{uid}/players/{pid}    profili dei figli: nickname dalle liste, avatar,
 nicknames/{key}                 prenotazione: nickname dei bambini unici
 creatorNicknames/{key}          prenotazione: nickname da creatore unici
 rateLimits/{hash}               contatori anti-abuso (chiavi cifrate con hash, nessuna email o IP in chiaro)
+games/{gameId} (+ /versions)    giochi creati nello Studio e le loro versioni (vedi docs/STUDIO.md)
+aiDaily/{uid}_{giorno}          generazioni AI per account e giorno
+aiMonthly/{mese}                spesa AI stimata del mese
 ```
 
 ## In locale: niente progetto, solo emulatori
@@ -94,3 +97,21 @@ Google Cloud Console → APIs & Services → **Credentials** → la chiave del p
 **API restrictions** → "Restrict key" → solo **Identity Toolkit API** → Save.
 Non usare restrizioni per sito (HTTP referrer) o per IP: la chiave la usa solo il server di Vercel, che non manda
 un referrer e non ha un IP fisso, e quelle restrizioni bloccherebbero l'accesso.
+
+## Sito dei giochi (progetto Vercel `zukka-play`): lettura dei giochi creati
+
+Il sito dei giochi legge le versioni dei giochi da Firestore con un **service account separato, di sola lettura**.
+
+1. Google Cloud Console → IAM & Admin → **Service Accounts** → Create service account: nome `zukka-play-reader`.
+2. Ruolo: **Cloud Datastore Viewer** (solo lettura di Firestore), nient'altro.
+3. Apri il service account → Keys → Add key → JSON.
+4. Su Vercel, progetto **zukka-play** (Production): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` (del nuovo account),
+   `FIREBASE_PRIVATE_KEY` (Sensitive). Poi Redeploy.
+
+## Variabili in più sul progetto `zukka` (Fase 3)
+
+| Variabile | Valore |
+|---|---|
+| `ANTHROPIC_API_KEY` | chiave API di Anthropic, Sensitive (senza, la casella "AI" non compare) |
+| `AI_MONTHLY_BUDGET_USD` | facoltativa, tetto di spesa AI mensile in dollari (predefinito 20) |
+| `ADMIN_EMAILS` | facoltativa, indirizzi (separati da virgola) che ricevono l'avviso di budget |

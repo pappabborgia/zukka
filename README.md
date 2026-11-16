@@ -2,7 +2,7 @@
 
 Giochi didattici per bambini di 6-9 anni, creati dai genitori con l'aiuto dell'AI.
 
-**Stato: Fase 2** (account genitore, profili dei figli, area genitore). Fase 1: formato dei giochi, eventi, sandbox, School Cup.
+**Stato: Fase 3** (Studio: giochi da un modello, School Cup configurabile, domande AI). Fasi 1-2: formato dei giochi, sandbox, account, profili, area genitore.
 
 ## Struttura
 
@@ -11,7 +11,9 @@ Giochi didattici per bambini di 6-9 anni, creati dai genitori con l'aiuto dell'A
 | `apps/web` | il sito Zukka (catalogo, pagina di gioco, verifica sandbox) |
 | `apps/play` | il sito separato che serve i giochi (`/g/<id>`) |
 | `packages/game-protocol` | eventi dei giochi, validazione, header di sicurezza |
-| `games/` | giochi inclusi: `school-cup` e due giochi sonda per i test |
+| `engines/` | motori dei giochi: `school-cup` e `starfish-race` (ex Corsa a Barcellona), ognuno con la sua configurazione |
+| `packages/engines` | schemi delle configurazioni, argomenti, creazione rapida |
+| `games/` | giochi del catalogo (da un motore o HTML) e due giochi sonda per i test |
 | `docs/` | formato dei giochi, isolamento, Firebase, controlli della revisione |
 | `firebase/` | regole di Firestore |
 

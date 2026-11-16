@@ -6,6 +6,7 @@ import { isNicknameParts, nicknameKey, nicknameText, type NicknameParts } from "
 import { MAX_PLAYERS_PER_ACCOUNT, POLICY_VERSION } from "../policies";
 import { isSchoolYear, type SchoolYear } from "../school-years";
 import { adminAuth, db } from "./firebase";
+import { deleteAllGamesOf } from "./games";
 import { checkPin, hashPin, isValidPin, PIN_LOCK_MINUTES, PIN_MAX_FAILS } from "./pin";
 
 /*
@@ -270,6 +271,14 @@ export async function exportAccount(uid: string): Promise<Record<string, unknown
     },
     consentHistory: consents.docs.map((d) => clean(d.data())),
     players: players.docs.map((d) => ({ id: d.id, ...clean(d.data()) })),
+    games: (await store.collection("games").where("creatorUid", "==", uid).get()).docs.map((d) => ({
+      id: d.id,
+      title: d.get("title"),
+      kind: d.get("kind"),
+      status: d.get("status"),
+      versions: d.get("versionCount"),
+      createdAt: iso(d.get("createdAt")),
+    })),
   };
 }
 
@@ -277,6 +286,7 @@ export async function exportAccount(uid: string): Promise<Record<string, unknown
 export async function deleteAccount(uid: string): Promise<void> {
   const store = db();
   const ref = accountRef(store, uid);
+  await deleteAllGamesOf(uid);
   const nick = await store.collection("nicknames").where("uid", "==", uid).get();
   const creator = await store.collection("creatorNicknames").where("uid", "==", uid).get();
   const batch = store.batch();

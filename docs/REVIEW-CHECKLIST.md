@@ -18,6 +18,7 @@ and a concrete fix. The AI only recommends; a person decides. A blocking problem
   in a completed play; `total` outside the `answers.min`–`answers.max` declared in `meta.json`.
 - **Important**: speech from voices that are not local (`localService !== true`); listening parts not hidden
   when there is no local voice.
+- **Blocking**: the game is larger than 700 KB (it cannot be saved or served).
 - Headless run: loads with no console errors, reacts to the first inputs, never stays on an empty screen,
   works with touch and mouse at phone and desktop sizes.
 

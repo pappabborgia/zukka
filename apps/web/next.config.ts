@@ -24,7 +24,7 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ["@zukka/game-protocol"],
+  transpilePackages: ["@zukka/game-protocol", "@zukka/engines"],
   async headers() {
     return [
       {

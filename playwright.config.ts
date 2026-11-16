@@ -27,7 +27,7 @@ export default defineConfig({
     {
       command: "npm run start -w play",
       url: "http://127.0.0.1:3001/",
-      env: { MAIN_ORIGINS: "http://localhost:3000" },
+      env: { MAIN_ORIGINS: "http://localhost:3000", FIREBASE_PROJECT_ID: "demo-zukka", FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080" },
       reuseExistingServer: !process.env.CI,
     },
     {

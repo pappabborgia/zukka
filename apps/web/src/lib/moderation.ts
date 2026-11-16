@@ -56,3 +56,23 @@ export function checkCreatorNickname(raw: string): { ok: true; value: string } |
   if (!m.ok) return { ok: false, reason: m.reason };
   return { ok: true, value };
 }
+
+/**
+ * Real teams, brands and characters that belong to someone else. Not complete: the AI review
+ * and the human reviewer check the rest. Matched on whole words, ignoring case and accents.
+ */
+const PROTECTED = [
+  "real madrid", "barcelona", "barca", "fc barcelona", "juventus", "manchester united", "man utd", "man united", "manchester city",
+  "man city", "liverpool", "chelsea", "arsenal", "tottenham", "spurs", "psg", "paris saint germain", "bayern", "ac milan", "inter milan",
+  "as roma", "napoli", "atletico madrid", "ajax", "benfica", "borussia", "celtic", "newcastle united", "aston villa",
+  "pokemon", "pikachu", "super mario", "mario kart", "luigi", "sonic", "peppa pig", "bluey", "disney", "frozen", "elsa", "olaf",
+  "spider man", "spiderman", "batman", "superman", "minecraft", "fortnite", "roblox", "barbie", "paw patrol", "marvel",
+  "harry potter", "hogwarts", "star wars", "lego", "minions", "shrek", "toy story", "nintendo", "playstation", "hello kitty",
+  "fifa", "premier league", "champions league", "la liga", "serie a", "uefa",
+];
+
+export function checkProtectedNames(text: string): { ok: true } | { ok: false; match: string } {
+  const norm = ` ${text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim()} `;
+  for (const p of PROTECTED) if (norm.includes(` ${p} `)) return { ok: false, match: p };
+  return { ok: true };
+}
