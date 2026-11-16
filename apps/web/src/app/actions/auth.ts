@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAccount } from "@/lib/server/accounts";
-import { completeSignIn, createSignInLink, EmailLinkError } from "@/lib/server/email-link";
-import { devMailMode, sendEmail, signInEmail } from "@/lib/server/mailer";
+import { completeSignIn, createSignInLink, EmailLinkError, sendFirebaseSignInEmail } from "@/lib/server/email-link";
+import { devMailMode, mailerConfigured, sendEmail, signInEmail } from "@/lib/server/mailer";
 import { clientIp, safeNext } from "@/lib/server/guards";
 import { hit, LIMITS } from "@/lib/server/rate-limit";
 import { endSession, pendingEmail, setPendingEmail, startSession, unlockParentArea } from "@/lib/server/session";
@@ -31,11 +31,20 @@ export async function requestSignIn(_prev: FormState, form: FormData): Promise<F
   const next = safeNext(form.get("next"), "/who");
   let devLink: string | undefined;
   try {
-    const link = await createSignInLink(email, next);
-    if (devMailMode()) devLink = link; // local development with the emulators: shown on screen, never in production
-    else await sendEmail(signInEmail(email, link));
+    if (mailerConfigured()) {
+      // Resend: our own email, no Firebase email limit
+      await sendEmail(signInEmail(email, await createSignInLink(email, next)));
+    } else if (devMailMode()) {
+      // local development with the emulators: the link is shown on screen, never in production
+      devLink = await createSignInLink(email, next);
+    } else {
+      // no Resend key: Firebase sends the email (a few per day on the free plan)
+      await sendFirebaseSignInEmail(email, next);
+    }
   } catch (e) {
     if (e instanceof EmailLinkError && e.code === "invalid_email") return { error: "Please type a valid email address." };
+    if (e instanceof EmailLinkError && e.code === "too_many")
+      return { error: "We cannot send more sign-in emails today. Please try again tomorrow." };
     console.error("sign-in email not sent", e);
     return { error: "We could not send the email just now. Please try again in a few minutes." };
   }

@@ -15,9 +15,9 @@ import {
   updatePlayer,
   verifyPin,
 } from "../../src/lib/server/accounts";
-import { completeSignIn, createSignInLink } from "../../src/lib/server/email-link";
+import { completeSignIn, createSignInLink, sendFirebaseSignInEmail } from "../../src/lib/server/email-link";
 import { adminAuth, db } from "../../src/lib/server/firebase";
-import { hit } from "../../src/lib/server/rate-limit";
+import { deleteExpiredRateLimits, hit } from "../../src/lib/server/rate-limit";
 import { POLICY_VERSION } from "../../src/lib/policies";
 
 const PROJECT = "demo-zukka";
@@ -217,6 +217,29 @@ describe("rate limits", () => {
   });
 });
 
+describe("rate limit clean-up (no TTL on the free plan)", () => {
+  it("ignores an expired counter even if it is still stored", async () => {
+    const t = Date.UTC(2026, 0, 1, 10, 0, 0);
+    for (let i = 0; i < 3; i++) await hit("old", "k", 3, 60, t);
+    expect(await hit("old", "k", 3, 60, t + 1000)).toBe(false);
+    // same window id, but the stored document says it has expired: it must not count
+    const docs = await db().collection("rateLimits").where("bucket", "==", "old").get();
+    await docs.docs[0].ref.update({ expiresAt: new Date(t - 1) });
+    expect(await hit("old", "k", 3, 60, t + 2000)).toBe(true);
+  });
+
+  it("deletes only expired counters", async () => {
+    const now = Date.now();
+    await hit("a", "1", 5, 60, now - 3 * 3600_000);
+    await hit("a", "2", 5, 60, now - 2 * 3600_000);
+    await hit("a", "3", 5, 3600, now);
+    expect(await deleteExpiredRateLimits(now)).toBe(2);
+    const left = await db().collection("rateLimits").get();
+    expect(left.size).toBe(1);
+    expect(left.docs[0].get("expiresAt").toMillis()).toBeGreaterThan(now);
+  });
+});
+
 describe("email link sign-in", () => {
   it("is generated on the server, points to our own page, and works once", async () => {
     const link = new URL(await createSignInLink("parent@example.com", "/play/school-cup"));
@@ -228,6 +251,19 @@ describe("email link sign-in", () => {
     expect(idToken.length).toBeGreaterThan(20);
     expect((await adminAuth().getUser(uid)).email).toBe("parent@example.com");
     await expect(completeSignIn("parent@example.com", oobCode)).rejects.toThrow("expired_or_used");
+  });
+
+  it("without Resend, Firebase sends the email and the link comes back to /auth/finish", async () => {
+    await sendFirebaseSignInEmail("fb@example.com", "/who");
+    const res = await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/emulator/v1/projects/${PROJECT}/oobCodes`);
+    const { oobCodes } = (await res.json()) as { oobCodes: { email: string; oobCode: string; oobLink: string }[] };
+    const sent = oobCodes.filter((c) => c.email === "fb@example.com");
+    expect(sent).toHaveLength(1);
+    const back = new URL(new URL(sent[0].oobLink).searchParams.get("continueUrl")!);
+    expect(back.origin + back.pathname).toBe("http://localhost:3000/auth/finish");
+    expect(back.searchParams.get("next")).toBe("/who");
+    const { uid } = await completeSignIn("fb@example.com", sent[0].oobCode);
+    expect((await adminAuth().getUser(uid)).email).toBe("fb@example.com");
   });
 
   it("does not work for another address", async () => {

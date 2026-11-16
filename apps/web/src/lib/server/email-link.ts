@@ -3,9 +3,10 @@ import { appOrigin, firebaseApiKey } from "./env";
 import { adminAuth } from "./firebase";
 
 /**
- * Passwordless sign-in with an email link.
- * - The link is generated on the server with the Admin SDK (generateSignInWithEmailLink), so Firebase
- *   sends no email and its daily email limits do not apply. Zukka sends the email itself (see mailer.ts).
+ * Passwordless sign-in with an email link. Two ways to send it:
+ * - With Resend configured: the link is generated on the server with the Admin SDK
+ *   (generateSignInWithEmailLink) and Zukka emails it (mailer.ts); Firebase's email limits do not apply.
+ * - Without Resend: Firebase sends the email (sendFirebaseSignInEmail), within its daily limit.
  * - The email points straight to our /auth/finish page with the one-time code; it never goes through a
  *   Firebase-hosted page.
  * - Finishing the sign-in uses the Firebase Auth REST API from the server. The browser never loads Firebase.
@@ -38,6 +39,29 @@ export async function createSignInLink(email: string, next: string): Promise<str
   link.searchParams.set("oobCode", oobCode);
   link.searchParams.set("next", next);
   return link.toString();
+}
+
+/**
+ * Fallback when Resend is not configured: Firebase itself sends the sign-in email
+ * (sender noreply@<project>.firebaseapp.com; the free plan allows only a few such emails a day).
+ * The link goes through Firebase's page and then back to continueUrl with the one-time code.
+ */
+export async function sendFirebaseSignInEmail(email: string, next: string): Promise<void> {
+  const continueUrl = new URL("/auth/finish", appOrigin());
+  continueUrl.searchParams.set("next", next);
+  const res = await fetch(`${identityBase()}/v1/accounts:sendOobCode?key=${encodeURIComponent(firebaseApiKey())}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestType: "EMAIL_SIGNIN", email, continueUrl: continueUrl.toString(), canHandleCodeInApp: true }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const json = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+    const msg = json.error?.message ?? "";
+    if (/INVALID_EMAIL|MISSING_EMAIL/.test(msg)) throw new EmailLinkError("invalid_email");
+    if (/TOO_MANY_ATTEMPTS|QUOTA_EXCEEDED/.test(msg)) throw new EmailLinkError("too_many");
+    throw new EmailLinkError("failed");
+  }
 }
 
 /** Exchanges the code from the link for a Firebase ID token (no email is sent by this call). */
