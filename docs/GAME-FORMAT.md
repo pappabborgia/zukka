@@ -13,7 +13,23 @@ Every Zukka game is **one self-contained HTML file**.
   no links, forms or popups. The browser blocks all of these anyway (see `docs/SANDBOX.md`); a game that tries
   them is rejected in review.
 - The game never receives data about the player (no name, nickname or anything else).
+- Sound and voice: Web Audio is fine. Speech, if used, must come only from device voices with
+  `voice.localService === true` (they never send the text away). With no such voice the game must still work,
+  and any part that depends on listening is hidden.
 - All text is in English (British spelling) for now.
+
+## Questions that count
+
+Zukka points come only from answers that **the game checks by itself** (multiple choice, a typed answer compared
+by code, a tap on the right place, and so on).
+
+- **Self-checked exercises** (the child says "I read it right", or compares their own handwriting with the answer)
+  may stay in a game as practice, but they **send no `answer` event** and are **left out of `correct` and `total`**
+  in `game_completed`.
+- In every play, **at least 80% of the questions must be checked by the game**, and a completed play must contain
+  **at least 5 of them**. A play with none sends no `game_completed`.
+- `meta.json` declares the expected number of counted answers in a completed play:
+  `"answers": {"min": 5, "max": 18}`. The platform uses it to spot plays that do not add up.
 
 ## Events
 

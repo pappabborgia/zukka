@@ -7,6 +7,9 @@ import { defineConfig } from "@playwright/test";
  * Run `npm run build` first.
  */
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
+// E2E_BASE_URL runs the School Cup tests against a deployed site instead (the sandbox tests need the local servers).
+const remote = process.env.E2E_BASE_URL;
+const proxy = process.env.E2E_PROXY ? { server: process.env.E2E_PROXY } : undefined;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -15,11 +18,12 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: remote ?? "http://localhost:3000",
+    proxy,
     trace: "off",
     launchOptions: executablePath ? { executablePath } : {},
   },
-  webServer: [
+  webServer: remote ? [] : [
     {
       command: "npm run start -w play",
       url: "http://127.0.0.1:3001/",

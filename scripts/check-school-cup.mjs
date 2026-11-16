@@ -10,7 +10,12 @@ const problems = [];
 page.on("pageerror", (e) => problems.push("page error: " + e.message));
 page.on("request", (r) => { if (!/^(file|data|blob):/.test(r.url())) problems.push("network request: " + r.url()); });
 await page.goto("file://" + file);
+const phonicsWithoutVoice = await page.evaluate(() => [...document.querySelectorAll("#subs button")].some((b) => /Phonics/.test(b.textContent)));
+if (phonicsWithoutVoice) problems.push("Phonics is in the menu although the device has no local voice");
 const res = await page.evaluate(() => {
+  // pretend the device has one local English voice, so Phonics questions are made the real way
+  speechSynthesis.getVoices = () => [{ name: "Test voice", lang: "en-GB", localService: true, voiceURI: "test" }];
+  speechSynthesis.speak = () => {};
   const out = [];
   let n = 0;
   for (const sb of Object.keys(SUBJECTS)) for (const y of [2, 3]) for (let l = 1; l <= 6; l++) {
@@ -20,11 +25,16 @@ const res = await page.evaluate(() => {
       try {
         const q = makeQuestion(l);
         if (!q.text || q.answer === undefined || q.answer === null) out.push(`${sb} Y${y} L${l}: empty question`);
+        else if (q.type === "say") out.push(`${sb} Y${y} L${l}: self-checked "say" question`);
+        else if (sb === "phonics" && (q.type || !q.say)) out.push(`${sb} Y${y} L${l}: phonics must be listen and choose: ${q.text}`);
         else if (!q.type && !q.labels.includes(q.answerLabel)) out.push(`${sb} Y${y} L${l}: answer not among options: ${q.text}`);
         else if (!q.type && new Set(q.labels).size !== q.labels.length) out.push(`${sb} Y${y} L${l}: duplicate options: ${q.text}`);
       } catch (e) { out.push(`${sb} Y${y} L${l}: ${e.message}`); }
     }
   }
+  renderMenu();
+  const phonicsWithVoice = [...document.querySelectorAll("#subs button")].some((b) => /Phonics/.test(b.textContent));
+  if (!phonicsWithVoice) out.push("Phonics is missing from the menu although a local voice exists");
   return { subjects: Object.keys(SUBJECTS), out, n };
 });
 await browser.close();

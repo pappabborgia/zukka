@@ -1,7 +1,19 @@
 {
   "title": "School Cup",
   "description": "Answer right to pass the ball, score goals and lift the trophy. Five cups, six rounds each.",
-  "subjects": ["maths", "reading", "writing"],
-  "years": [2, 3],
-  "listed": true
+  "subjects": [
+    "maths",
+    "reading",
+    "writing",
+    "phonics"
+  ],
+  "years": [
+    2,
+    3
+  ],
+  "listed": true,
+  "answers": {
+    "min": 5,
+    "max": 18
+  }
 }

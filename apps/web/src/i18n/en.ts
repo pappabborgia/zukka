@@ -8,6 +8,7 @@ export const en = {
   "subject.maths": "Maths",
   "subject.reading": "Reading",
   "subject.writing": "Writing",
+  "subject.phonics": "Phonics",
   "subject.other": "Other",
   "play.back": "All games",
   "play.loading": "Loading the game…",

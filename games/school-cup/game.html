@@ -879,24 +879,22 @@ function fillVoices(){ const sel=document.getElementById('voiceSel'); if(!sel) r
   sel.value=[...sel.options].some(o=>o.value===voicePref) ? voicePref : 'auto';
   document.getElementById('voiceRow').style.display = vs.length ? '' : 'none';
 }
-try{ if(hasSynth()) speechSynthesis.onvoiceschanged=fillVoices; }catch(e){}
+try{ if(hasSynth()) speechSynthesis.onvoiceschanged=()=>{ fillVoices(); if(!G && typeof renderMenu==='function') renderMenu(); }; }catch(e){}
 const COACH_GOOD = ['Goooal! That was so good my socks flew off!','Boom! Even my granny\'s parrot could not say it better!','Yes! Your tongue is a football superstar!',
   'Wowzers! I nearly dropped my sandwich!','Brilliant! The crowd goes bananas!','Top bins! That word did not stand a chance!','Kaboom! You smashed it like a hungry hippo!'];
 const COACH_BAD = ['Oopsie! That sounded like a sleepy walrus!','Whoops! My ears just did a somersault!','Uh oh! That word ran away like a chicken!',
   'Nope! The ball went into the car park!','Yikes! Even my dog looked confused!','Oh dear! That one hit the ice cream van!','Blimey! That went over the stadium roof!'];
-/* ---------- PHONICS: read it aloud (checked with a grown-up), hear it (device voice) ---------- */
-// spell it: listen, then type the word (needs a device voice; otherwise read it aloud)
-const spellQ = w => { if(!canSpeak()) return sayQ(w); const q=typed('Listen, then type the word', w); q.say=w; q.ph=true; return q; };
-const rhymeQ = () => { const q=fromBank(BANK.R2[0])(); q.ph=true; return q; };
-const ASK = {
-  2:[['Say the past tense of “jump”','jumped'],['Say the opposite of “big”','small',['little','tiny']],['Say “happy” with -ness on the end','happiness'],
-     ['Say the short form of “do not”',"don't",['dont']],['Say the opposite of “hot”','cold'],['Say “quick” with -ly on the end','quickly'],['Say the past tense of “go”','went'],['Say “care” with -ful on the end','careful']],
-  3:[['Say the opposite of “happy”, starting with un-','unhappy'],['Say the word that means “not agree”','disagree'],['Say “quick” with -ly on the end','quickly'],['Say the word that means “write again”','rewrite'],
-     ['Say the word that means “full of care”','careful'],['Say the word that means “without hope”','hopeless'],['Say the opposite of “appear”, starting with dis-','disappear'],
-     ['Say the word that means “behave badly”','misbehave'],['Say “danger” with -ous on the end','dangerous'],['Say “inform” with -ation on the end','information']]};
-const askQ = y => () => { const [t,a,also]=pick(ASK[y]); const q=typed(t.replace(/^Say/,'Type'), a, {also}); q.ph=true; return q; };
-const sayQ = w => ({text: w.includes(' ') ? 'Read this sentence out loud' : 'Read this word out loud', answer:w, pass:w, type:'say', plain:true, ph:true, secs:60, noRival:true});
-const hearQ = set => { if(!canSpeak()) return sayQ(set[0]); const ws=shuffle(set.slice()), q=word('Listen! Which word did the coach say?', ws[0], ws.slice(1)); q.say=ws[0]; q.ph=true; q.secs=45; return q; };
+/* ---------- PHONICS: listen and choose. The device voice says a sound, word or sentence; the child taps the answer.
+   Without a local English voice, Phonics is not shown in the menu. ---------- */
+const listenFallback = () => { const q=fromBank(BANK['R'+year][0])(); q.ph=true; return q; }; // only if the voice disappears mid-match
+const hearQ = set => { if(!canSpeak()) return listenFallback(); const ws=shuffle(set.slice()), q=word('Listen! Which word did the coach say?', ws[0], ws.slice(1)); q.say=ws[0]; q.ph=true; q.secs=45; return q; };
+// a word (or sentence) from the round's list, with three others from the same list
+const hearSay = list => () => { if(!canSpeak()) return listenFallback(); const ws=take(list,4), q=word(ws[0].includes(' ') ? 'Listen! Which sentence did the coach say?' : 'Listen! Which word did the coach say?', ws[0], ws.slice(1));
+  q.say=ws[0]; q.ph=true; q.secs=45; return q; };
+// rhymes: hear a word, choose the word that rhymes with it
+const RHYME_ITEMS = BANK.R2[0].filter(it=>/rhymes with "(\w+)"/.test(it.q));
+const hearRhyme = () => { if(!canSpeak()) return listenFallback(); const it=pick(RHYME_ITEMS), w=it.q.match(/rhymes with "(\w+)"/)[1];
+  const q=word('Listen! Which word rhymes with the word you heard?', it.a, it.w); q.say=w; q.ph=true; q.secs=45; return q; };
 const PH = {
   2: [
     {desc:'short words with sh, ch, th, ck, ng', say:['ship','chip','thin','duck','ring','shop','chat','bath','fish','king'],
@@ -927,14 +925,12 @@ const PH = {
      hear:[['unhappy','unhelpful','unlucky','unfair'],['careful','careless','carefully','caring'],['computer','commuter','compute','complete'],['station','statue','stadium','starting']]}
   ]
 };
-const phTag = g => () => { const q=g(); q.ph=true; return q; };
-SUBJECTS.phonics = {name:'Phonics', icon:'🗣️', col:'#d6336c', info:{
-    2:'Year 2 phonics: read aloud to a grown-up, listen and choose, listen and type, rhymes. Digraphs, long vowels, magic e and tricky words. No music, so the voice is easy to hear.',
-    3:'Year 3 phonics: read aloud to a grown-up, listen and choose, listen and type. Prefixes, suffixes, long words and tricky endings. No music, so the voice is easy to hear.'},
-  years:Object.fromEntries([2,3].map(y=>[y, PH[y].map((st,i)=>({desc:st.desc, secs:y===2?45:38,
-    gens:(()=>{ const words=(i===5 ? PH[y][4] : st).say; // the sentence round spells the words of the round before
-      return [()=>sayQ(pick(st.say)), ()=>sayQ(pick(st.say)), ()=>hearQ(pick(st.hear)), ()=>spellQ(pick(words)), ()=>spellQ(pick(words)),
-              y===2 ? rhymeQ : askQ(3), y===2 ? askQ(2) : phTag(syllables)]; })()}))]))};
+SUBJECTS.phonics = {name:'Phonics', icon:'🗣️', col:'#d6336c', listen:true, info:{
+    2:'Year 2 phonics: listen to the coach and choose the word you heard, or the word that rhymes. Digraphs, long vowels, magic e and tricky words. No music, so the voice is easy to hear.',
+    3:'Year 3 phonics: listen to the coach and choose the word you heard. Prefixes, suffixes, long words and tricky endings. No music, so the voice is easy to hear.'},
+  years:Object.fromEntries([2,3].map(y=>[y, PH[y].map(st=>({desc:st.desc, secs:y===2?45:38,
+    gens:[()=>hearQ(pick(st.hear)), ()=>hearQ(pick(st.hear)), hearSay(st.say), hearSay(st.say), y===2 ? hearRhyme : hearSay(st.say)]}))]))};
+const subjectAvailable = id => !SUBJECTS[id].listen || canSpeak();
 // MIX: every question comes from maths, reading or writing at random
 SUBJECTS.mix = {name:'Mix', icon:'🎲', col:'#0ca678', info:{
     2:'Year 2 mix: maths, reading and writing questions all mixed together.',
@@ -965,9 +961,8 @@ function makeQuestion(level){
     if(i===24) usedQ.clear();
   }
   usedQ.add((q.pass||'')+q.text+(q.say||''));
-  if(q.type==='say'){ q.options=[]; q.labels=[]; q.answerLabel=q.answer; return q; }
   if(q.type==='type'){ // on an iPad half of the one-word answers are written by hand on the pad
-    if(device==='ipad' && !q.exact && Math.random()<.5){ q.type='pen'; q.noRival=true; q.secs=90; q.text=q.text.replace(/^Type/,'Write').replace(/ type /,' write '); }
+    if(device==='ipad' && !q.exact && Math.random()<.5 && G && G.selfChecked < (G.mode===2 ? 1 : 3)){ G.selfChecked++; q.type='pen'; q.noRival=true; q.secs=90; q.text=q.text.replace(/^Type/,'Write').replace(/ type /,' write '); }
     q.options=[]; q.labels=[]; q.answerLabel=q.answer; return q; }
   if(!q.options){ // build three believable wrong answers around the right one
     const a=q.answer, set=new Set();
@@ -1255,6 +1250,7 @@ function startMatch(c){
   if(colDist(TEAMS[c.a].c1,tb.c1)<110) tb={...tb, c1:tb.c2, c2:tb.c1}; // shirts too similar: away kit
   const A=buildTeam(0,TEAMS[c.a]), B=buildTeam(1,tb);
   G={mode:c.mode, level:c.level, skill:skill(c.level), cup:!!c.cup, teams:[A,B], score:[0,0], poss:0, stage:1, holder:null,
+     selfChecked:0, zkAsked:0, zkRight:0,
      minute:0, busy:true, q:null, deadline:0, qStart:0, right:[0,0], asked:[0,0], over:false};
   $('nmA').textContent=A.name; $('nmB').textContent=B.name;
   $('bdA').innerHTML=crest(A); $('bdB').innerHTML=crest(B);
@@ -1316,12 +1312,10 @@ function nextTurn(){
   qe.textContent=G.q.text; qe.className='q'+(G.q.text.length>30?' xl':G.q.text.length>15?' lg':'');
   $('pass').textContent=G.q.pass||''; $('pass').style.display=G.q.pass?'':'none';
   const box=$('ans'); box.innerHTML='';
-  $('pass').classList.toggle('big', G.q.type==='say');
   if(G.q.say){ // listen-and-choose: the word is spoken, never shown
     const ps=$('pass'); ps.style.display=''; ps.textContent=''; const hb=document.createElement('button'); hb.className='hearb'; hb.textContent='🔊 Hear it again';
     hb.onclick=()=>speak(G.q.say); ps.appendChild(hb); speak(G.q.say);
   }
-  if(G.q.type==='say'){ sayQuestion(box); } else
   if(G.q.type==='pen'){ penQuestion(box); } else
   if(G.q.type==='type'){
     box.className='ans type';
@@ -1354,12 +1348,6 @@ function nextTurn(){
   $('rival').classList.toggle('on',G.rival);
 }
 
-/* ---------- say it out loud: an honest self-check with a grown-up ---------- */
-function sayQuestion(box){
-  box.className='ans say';
-  box.innerHTML=`<div class="heard">Say it out loud to a grown-up, then be honest!</div><div class="padbtns"><button id="pno">Not quite ✗</button><button id="pyes">I said it right ✓</button></div>`;
-  $('pyes').onclick=()=>answer(true); $('pno').onclick=()=>answer(false);
-}
 /* ---------- handwriting pad (iPad): write with a finger or Apple Pencil, then check it yourself ---------- */
 function penQuestion(box){
   box.className='ans pen';
@@ -1395,7 +1383,7 @@ function answer(v){
   if(!G||G.busy||G.over) return;
   initAudio();
   G.busy=true; $('rival').classList.remove('on');
-  const isT=G.q.type==='type', isP=G.q.type==='pen'||G.q.type==='say', timeout = v===null;
+  const isT=G.q.type==='type', isP=G.q.type==='pen', timeout = v===null;
   const ok = !timeout && (isP ? v===true : isT ? G.q.accept.includes(norm(v,G.q.exact)) : String(v)===String(G.q.answer));
   if(!timeout) G.presser=null;
   if(isP){
@@ -1414,7 +1402,9 @@ function answer(v){
   $('panel').classList.add('wait');
   G.minute+=MINUTES_PER_QUESTION;
   G.asked[G.answering]++; if(ok) G.right[G.answering]++;
-  if(G.answering===0) Zukka.answer(ok); // only the home team's answers count
+  // Zukka counts only the home team's answers that the game checks by itself;
+  // handwriting is checked by the child, so it stays an exercise and is not reported
+  if(G.answering===0 && !isP){ G.zkAsked++; if(ok) G.zkRight++; Zukka.answer(ok); }
   ok ? sfx.good() : sfx.bad();
   const attackerAnswered = G.mode===2 || G.poss===0;
   const p=G.poss, o=1-p, coach = G.q.ph ? pick(ok?COACH_GOOD:COACH_BAD) : null, wait = coach?3000:ok?350:(isT||isP)?2600:1500;
@@ -1491,7 +1481,7 @@ function drawTrophy(x,y,k,t){
 function endMatch(){
   if(G.cup && G.score[0]>G.score[1] && !G.party && cup.beaten.every((b,i)=>b || i===G.level-1)) return startParty();
   G.over=true; G.busy=true; G.cele=null; G.party=null; G.presser=null; clearTimers(); stopMusic(); sfx.whistle(); updateHud();
-  if(!G.reported){ G.reported=true; Zukka.completed(G.right[0], G.asked[0]); }
+  if(!G.reported){ G.reported=true; if(G.zkAsked>0) Zukka.completed(G.zkRight, G.zkAsked); }
   $('rival').classList.remove('on');
   const [a,b]=G.score, A=G.teams[0], B=G.teams[1];
   let title, extra='', btns='', top='';
@@ -1626,7 +1616,9 @@ function renderMenu(){
   $('myName').textContent=`Year ${year} · ${TEAMS[MY_TEAM].name}`;
   $('yearInfo').textContent = SUBJECTS[subject].info[year];
   const sb=$('subs'); sb.innerHTML='';
+  if(!subjectAvailable(subject)){ subject='maths'; fillLevels(); }
   for(const [id,S] of Object.entries(SUBJECTS)){
+    if(!subjectAvailable(id)) continue;
     const b=document.createElement('button'); b.className='sub'+(id===subject?' sel':''); b.style.setProperty('--tc',S.col);
     b.innerHTML=`<span class="ti">${S.icon}</span><b>${S.name}</b>`;
     b.onclick=()=>{ subject=id; fillLevels(); renderMenu(); };
