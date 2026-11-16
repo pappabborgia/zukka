@@ -3,7 +3,7 @@ import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 
-const file = join(dirname(fileURLToPath(import.meta.url)), "../games/school-cup/game.html");
+const file = join(dirname(fileURLToPath(import.meta.url)), "../engines/school-cup/template.html");
 const browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
 const page = await browser.newPage();
 const problems = [];

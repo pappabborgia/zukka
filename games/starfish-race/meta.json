@@ -1,0 +1,17 @@
+{
+  "title": "Race to Starfish Bay",
+  "description": "Run along the coast from town to town. Answer each maths question to grab the prize. Plus and minus, or times tables.",
+  "subjects": [
+    "maths"
+  ],
+  "years": [
+    2,
+    3
+  ],
+  "answers": {
+    "min": 5,
+    "max": 12
+  },
+  "listed": true,
+  "engine": "starfish-race"
+}

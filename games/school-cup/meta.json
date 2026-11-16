@@ -15,5 +15,6 @@
   "answers": {
     "min": 5,
     "max": 18
-  }
+  },
+  "engine": "school-cup"
 }
