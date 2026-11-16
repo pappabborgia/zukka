@@ -6,7 +6,7 @@
     "games": "node scripts/build-games.mjs",
     "dev": "npm run games && concurrently -n web,play \"npm run dev -w web\" \"npm run dev -w play\"",
     "build": "npm run games && npm run build -w play && npm run build -w web",
-    "typecheck": "tsc -p packages/game-protocol --noEmit && tsc -p apps/web --noEmit && tsc -p apps/play --noEmit",
+    "typecheck": "npm run games && tsc -p packages/game-protocol --noEmit && tsc -p apps/web --noEmit && tsc -p apps/play --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check:school-cup": "node scripts/check-school-cup.mjs"
