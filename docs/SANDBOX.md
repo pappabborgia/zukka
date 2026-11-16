@@ -6,7 +6,7 @@ gira sempre in una "scatola" da cui non può uscire. Le protezioni sono quattro,
 ## 1. Un sito diverso
 
 I giochi sono serviti da un progetto Vercel separato (`zukka-play.vercel.app`), mentre il sito è su
-`zukka.vercel.app`. `vercel.app` è nella Public Suffix List, quindi per il browser sono **due siti distinti**,
+`zukka-gules.vercel.app`. `vercel.app` è nella Public Suffix List, quindi per il browser sono **due siti distinti**,
 come se fossero due domini comprati separatamente: cookie, sessione e storage del sito principale non sono mai
 raggiungibili dal sito dei giochi. In locale: `localhost:3000` (sito) e `127.0.0.1:3001` (giochi).
 
@@ -26,7 +26,7 @@ Il server dei giochi (`apps/play/src/app/g/[id]/route.ts`) risponde con questi h
 Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
   img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none';
   base-uri 'none'; manifest-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none';
-  frame-ancestors https://zukka.vercel.app; sandbox allow-scripts
+  frame-ancestors https://zukka-gules.vercel.app; sandbox allow-scripts
 Permissions-Policy: camera=(), microphone=(), geolocation=(), ...
 Referrer-Policy: no-referrer
 X-Content-Type-Options: nosniff
@@ -65,6 +65,8 @@ Codice: `packages/game-protocol/src/messages.ts` e `session.ts`, test in `packag
    un "gioco sonda" che prova a fare tutto ciò che è vietato e controllano che nessuna richiesta lasci la sandbox
    (con un test di controllo che dimostra che la trappola di rete funziona davvero).
 2. **A mano**: apri `/dev/sandbox-check`. Ogni riga deve avere ✅ (la riga ℹ️ su WebRTC è il limite noto).
+   Nel secondo riquadro "Frame loads" diventa 2: il secondo caricamento è la pagina di errore del browser
+   che sostituisce la navigazione bloccata. Conta che il riquadro non mostri mai example.com.
    Con DevTools aperto, scheda Network: nessuna richiesta riuscita verso `example.com`; le richieste bloccate
    compaiono come `(blocked:csp)`. Nella Console vedrai gli errori della Content Security Policy: sono i blocchi
    che funzionano.

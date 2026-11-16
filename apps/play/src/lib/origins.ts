@@ -1,6 +1,6 @@
 /**
  * Origins allowed to embed games (CSP frame-ancestors). Comma separated.
- * Example: MAIN_ORIGINS=https://zukka.vercel.app
+ * Example: MAIN_ORIGINS=https://zukka-gules.vercel.app
  */
 export function allowedParentOrigins(): string[] {
   const raw = process.env.MAIN_ORIGINS ?? (process.env.NODE_ENV === "production" ? "" : "http://localhost:3000");

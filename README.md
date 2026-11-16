@@ -41,6 +41,8 @@ npm run build && npx playwright test   # sandbox e partita completa nel browser
 | Progetto | Root Directory | Variabile d'ambiente |
 |---|---|---|
 | `zukka` | `apps/web` | `NEXT_PUBLIC_PLAY_ORIGIN=https://zukka-play.vercel.app` |
-| `zukka-play` | `apps/play` | `MAIN_ORIGINS=https://zukka.vercel.app` |
+| `zukka-play` | `apps/play` | `MAIN_ORIGINS=https://zukka-gules.vercel.app` |
 
 I file `apps/*/vercel.json` impostano già installazione e build.
+
+Indirizzi attuali: sito https://zukka-gules.vercel.app (il nome `zukka.vercel.app` era già di un altro sito), giochi https://zukka-play.vercel.app.

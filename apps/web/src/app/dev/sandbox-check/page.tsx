@@ -16,8 +16,9 @@ export default function SandboxCheck() {
       <ProbeHost src={gameUrl("sandbox-probe")} title="Sandbox probe" />
       <h2>2. Leaving the game</h2>
       <p>
-        This one tries to send its own frame to example.com. The frame must not show example.com: it should show its own
-        text or a browser error, and the frame-load count should stay at 1.
+        This one tries to send its own frame to example.com. The frame must never show example.com. Because the browser
+        blocks the navigation, the frame shows the browser&apos;s own error page instead, so the frame-load count becomes 2:
+        that second load is the error page, and it is expected.
       </p>
       <ProbeHost src={gameUrl("sandbox-probe-navigate")} title="Sandbox probe: navigation" />
       <h2>Check it yourself</h2>
