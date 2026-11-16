@@ -48,6 +48,10 @@ Test: `npm run test:emu` (dati e regole) e `npm run e2e` (browser).
 6. **Project settings** → General: copia il **Project ID** e la **Web API Key**.
 7. **Project settings** → Service accounts → **Generate new private key**: scarica il file JSON.
    È una chiave segreta: non mandarla in chat e non metterla nel repository.
+7b. **Ruoli del service account** (in alcuni progetti Firebase non li assegna da solo; senza, Firestore risponde
+   `PERMISSION_DENIED: Missing or insufficient permissions`): Google Cloud Console → IAM → Grant access →
+   `firebase-adminsdk-fbsvc@<project-id>.iam.gserviceaccount.com` con i ruoli **Cloud Datastore User** e
+   **Firebase Authentication Admin**, nient'altro.
 8. Su **Vercel**, progetto `zukka` → Settings → Environment Variables (ambiente Production):
 
 | Variabile | Valore |
