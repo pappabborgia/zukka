@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sandbox probe: navigation</title></head>
+<body style="font:15px system-ui;margin:16px">
+<p>This test game tries to send its own frame to example.com. If you can still read this, or see an error inside the frame, the navigation was blocked.</p>
+<script>
+  window.parent.postMessage({ protocol: 'zukka-probe/1', navigating: true }, '*');
+  setTimeout(() => { location.href = 'https://example.com/zukka-probe-navigate'; }, 300);
+</script>
+</body>
+</html>

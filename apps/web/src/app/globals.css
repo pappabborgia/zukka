@@ -1,0 +1,80 @@
+:root {
+  --ink: #1f1645;
+  --muted: #5b5478;
+  --orange: #f7a531;
+  --orange-dark: #e8590c;
+  --green: #4caf50;
+  --purple: #5b3fa0;
+  --cream: #fff8ee;
+  --card: #ffffff;
+  --ok: #1b7f3b;
+  --bad: #c62828;
+  --radius: 18px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Fredoka Variable", "Arial Rounded MT Bold", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  min-height: 100dvh;
+}
+a { color: inherit; }
+button { font: inherit; cursor: pointer; }
+
+.logo { display: inline-flex; align-items: center; gap: .3em; text-decoration: none; }
+.logo-word { font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+
+.topbar {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  background: #fff; border-bottom: 3px solid #f3e3c8;
+}
+.topbar .grow { flex: 1; }
+.topbar .back { text-decoration: none; font-weight: 600; color: var(--purple); }
+.topbar h1 { font-size: 20px; margin: 0; font-weight: 600; }
+.badge { font-size: 12px; background: #efe8ff; color: var(--purple); padding: 3px 8px; border-radius: 99px; }
+
+.page { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+.hero { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 24px; }
+.hero p { margin: 0; color: var(--muted); font-size: 18px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.card {
+  background: var(--card); border-radius: var(--radius); padding: 18px; text-decoration: none;
+  box-shadow: 0 4px 0 #f0dcbc; border: 2px solid #f3e3c8; display: flex; flex-direction: column; gap: 8px;
+  transition: transform .12s ease;
+}
+.card:hover { transform: translateY(-2px); }
+.card h3 { margin: 0; font-size: 22px; font-family: "Lilita One", "Fredoka Variable", sans-serif; font-weight: 400; letter-spacing: .5px; }
+.card p { margin: 0; color: var(--muted); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 13px; padding: 2px 8px; border-radius: 99px; background: #fff1dc; color: #8a4b00; }
+.cta { margin-top: auto; align-self: flex-start; background: var(--orange); color: #3a1d00; font-weight: 700; padding: 8px 18px; border-radius: 99px; }
+
+/* game page: the iframe fills the screen under the top bar */
+.playpage { display: flex; flex-direction: column; height: 100dvh; }
+.host { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; }
+.frame-wrap { flex: 1; position: relative; min-height: 0; background: #0b1b33; }
+.frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.frame-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 20px; }
+.summary {
+  position: absolute; z-index: 2; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; max-width: calc(100% - 32px);
+  background: #fff; border: 3px solid var(--orange); border-radius: var(--radius); padding: 10px 44px 10px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+.summary strong { font-size: 18px; }
+.summary small { color: var(--muted); width: 100%; }
+.summary button { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 18px; }
+.debug { background: #fff; border-top: 2px solid #f3e3c8; max-height: 30vh; overflow: auto; padding: 8px 16px; font-size: 14px; }
+.debug li.ok { color: var(--ok); }
+.debug li.bad { color: var(--bad); }
+
+/* sandbox check */
+.probe iframe { width: 100%; height: 340px; border: 3px dashed #d8c9a8; border-radius: 12px; background: #fff; }
+.probe .ok { color: var(--ok); font-weight: 700; }
+.probe .bad { color: var(--bad); font-weight: 700; }
+.probe-table { border-collapse: collapse; width: 100%; background: #fff; font-size: 14px; }
+.probe-table td { border-bottom: 1px solid #eee; padding: 6px 8px; vertical-align: top; }
+.steps li { margin: 6px 0; }
+code { background: #f4efe6; padding: 1px 5px; border-radius: 6px; }

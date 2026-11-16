@@ -1,0 +1,21 @@
+{
+  "name": "zukka",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "games": "node scripts/build-games.mjs",
+    "dev": "npm run games && concurrently -n web,play \"npm run dev -w web\" \"npm run dev -w play\"",
+    "build": "npm run games && npm run build -w play && npm run build -w web",
+    "typecheck": "tsc -p packages/game-protocol --noEmit && tsc -p apps/web --noEmit && tsc -p apps/play --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check:school-cup": "node scripts/check-school-cup.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "concurrently": "^9.2.1",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "engines": { "node": ">=20" }
+}

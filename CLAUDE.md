@@ -1,0 +1,28 @@
+# Notes for Claude Code
+
+Zukka: a platform of learning games for 6 to 9 year olds, made by parents with the help of AI.
+UI and games are in English (British). Code, comments and commit messages in English.
+
+## Layout
+
+- `apps/web`: main site (Next.js App Router). Deployed as Vercel project "zukka".
+- `apps/play`: games origin. Serves only `/g/<id>` with strict headers. Vercel project "zukka-play".
+- `packages/game-protocol`: event schema (Zod), host-side play session, game response headers, game SDK snippet.
+- `games/<id>/game.html` + `meta.json`: built-in games, bundled by `scripts/build-games.mjs`
+  into `apps/play/src/generated` and `apps/web/src/generated` (both gitignored, regenerated on dev/build).
+- `docs/`: `GAME-FORMAT.md` (what a game must be), `SANDBOX.md` (isolation and how to verify it).
+
+## Rules to keep
+
+- Never weaken the sandbox: iframe `sandbox="allow-scripts"` only; game CSP from `gameResponseHeaders()`;
+  main site `frame-src` limited to the games origin. Any change there needs the e2e sandbox tests green.
+- A game receives no player data. The host accepts only the three events and measures time itself.
+- Points and credits are computed server side only (later phases).
+- Children never type free text that others can see.
+- Next.js here is 16.x: read `node_modules/next/dist/docs/` before using an API you are unsure of.
+
+## Checks
+
+- `npm test` (Vitest unit tests), `npm run typecheck`, `npm run lint -w web`
+- `npm run check:school-cup` (every subject, year and level makes valid questions)
+- `npm run build && npx playwright test` (sandbox and School Cup end to end). Stop old `next start` servers first.

@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+.env*.local
+!.env.example
+.env
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+test-results
+playwright-report
+/apps/play/src/generated/
+/apps/web/src/generated/

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" role="img" aria-label="Zukka">
+  <g stroke="#1f1645" stroke-width="5" stroke-linejoin="round">
+    <path d="M60 30 C58 20 62 12 70 8" fill="none" stroke-linecap="round"/>
+    <path d="M66 24 C74 12 92 12 100 16 C94 28 80 32 66 24 Z" fill="#4caf50"/>
+    <ellipse cx="38" cy="70" rx="28" ry="36" fill="#f08c00"/>
+    <ellipse cx="82" cy="70" rx="28" ry="36" fill="#f08c00"/>
+    <ellipse cx="60" cy="70" rx="30" ry="40" fill="#f7a531"/>
+  </g>
+  <path d="M40 52 C36 60 36 72 40 82" stroke="#ffd08a" stroke-width="5" stroke-linecap="round" fill="none" opacity=".8"/>
+  <circle cx="50" cy="64" r="5" fill="#1f1645"/>
+  <path d="M66 64 Q72 58 78 64" stroke="#1f1645" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M50 78 Q64 94 78 78 Z" fill="#1f1645"/>
+  <path d="M57 85 Q64 90 71 85 Q64 82 57 85 Z" fill="#ff6b6b"/>
+  <text x="130" y="92" font-family="Fredoka, 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif" font-weight="700" font-size="84" fill="#1f1645" letter-spacing="-1">Zukka</text>
+</svg>

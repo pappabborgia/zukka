@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandbox probe</title>
+<style>
+  body{font:15px/1.4 system-ui,sans-serif;margin:16px;background:#fff8ee;color:#1d1640}
+  li{margin:4px 0} .ok{color:#1b7f3b} .bad{color:#c62828;font-weight:700} .info{color:#8a5a00}
+</style>
+</head>
+<body>
+<h1>Sandbox probe</h1>
+<p>This test game tries everything a Zukka game must not be able to do. Each line says whether the browser blocked it.</p>
+<ul id="out"></ul>
+<script>
+/* Every attempt targets example.com (or the page around us). Nothing here should succeed. */
+const OUT = 'https://example.com/zukka-probe';
+const results = [];
+let cspViolations = 0;
+document.addEventListener('securitypolicyviolation', () => { cspViolations++; });
+const log = (test, blocked, detail, kind) => {
+  results.push({ test, blocked, detail: String(detail || ''), kind: kind || (blocked ? 'blocked' : 'NOT BLOCKED') });
+  const li = document.createElement('li');
+  li.className = kind === 'limitation' ? 'info' : blocked ? 'ok' : 'bad';
+  li.textContent = (kind === 'limitation' ? 'ℹ️ ' : blocked ? '✅ ' : '❌ ') + test + (detail ? ' — ' + detail : '');
+  document.getElementById('out').appendChild(li);
+};
+const tryThrows = (test, fn) => { try { const r = fn(); log(test, false, 'returned ' + typeof r); } catch (e) { log(test, true, e.name); } };
+const tryRejects = async (test, fn, ms = 4000) => {
+  try { await Promise.race([fn(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); log(test, false, 'request went through'); }
+  catch (e) { log(test, true, e.name || e.message); }
+};
+const tryLoads = (test, make, ms = 3000) => new Promise(res => {
+  const el = make(); let done = false;
+  const fin = (blocked, d) => { if (done) return; done = true; log(test, blocked, d); res(); };
+  el.onload = () => fin(false, 'loaded'); el.onerror = () => fin(true, 'error'); setTimeout(() => fin(true, 'never loaded'), ms);
+  document.body.appendChild(el);
+});
+
+(async () => {
+  // storage and identity of the site
+  tryThrows('Read cookies', () => document.cookie);
+  tryThrows('Read localStorage', () => window.localStorage.length);
+  tryThrows('Read sessionStorage', () => window.sessionStorage.length);
+  tryThrows('Open IndexedDB', () => { const r = indexedDB.open('probe'); return r; });
+  tryThrows('Read the parent page', () => window.parent.document.title);
+  tryThrows('Read the parent page URL', () => window.parent.location.href);
+  tryThrows('Run eval()', () => eval('1+1'));
+  tryThrows('Run new Function()', () => new Function('return 1')());
+  log('Origin of this game', self.origin === 'null', 'origin is ' + self.origin);
+
+  // network
+  await tryRejects('fetch() to another site', () => fetch(OUT, { mode: 'no-cors' }));
+  await tryRejects('fetch() to its own origin', () => fetch('/g/school-cup'));
+  await tryRejects('XMLHttpRequest', () => new Promise((res, rej) => { const x = new XMLHttpRequest(); x.open('GET', OUT); x.onload = res; x.onerror = () => rej(new Error('xhr error')); x.send(); }));
+  await tryRejects('WebSocket', () => new Promise((res, rej) => { try { const w = new WebSocket('wss://example.com/zukka-probe'); w.onopen = res; w.onerror = () => rej(new Error('ws error')); } catch (e) { rej(e); } }));
+  await tryRejects('EventSource', () => new Promise((res, rej) => { try { const s = new EventSource(OUT); s.onopen = res; s.onerror = () => { s.close(); rej(new Error('es error')); }; } catch (e) { rej(e); } }));
+  // sendBeacon and nested frames give no reliable answer from inside: the browser test checks that no request leaves
+  try { navigator.sendBeacon(OUT, 'x'); } catch (e) {}
+  log('navigator.sendBeacon', true, 'blocked by connect-src; confirmed by the network check', 'network-checked');
+  await tryLoads('External image', () => { const i = new Image(); i.src = OUT + '.png'; return i; });
+  await tryLoads('External script', () => { const s = document.createElement('script'); s.src = OUT + '.js'; return s; });
+  await tryLoads('External stylesheet', () => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = OUT + '.css'; return l; });
+  { const f = document.createElement('iframe'); f.src = OUT; document.body.appendChild(f);
+    log('Nested iframe', true, 'blocked by frame-src; confirmed by the network check', 'network-checked'); }
+  await tryRejects('Web font from the internet', () => new FontFace('X', `url(${OUT}.woff2)`).load());
+  await tryRejects('Web Worker', () => new Promise((res, rej) => { try { const w = new Worker(URL.createObjectURL(new Blob(['postMessage(1)']))); w.onmessage = res; w.onerror = () => rej(new Error('worker error')); } catch (e) { rej(e); } }));
+
+  // leaving the game
+  tryThrows('Navigate the main page', () => { window.top.location.href = OUT; });
+  tryThrows('Open a popup', () => { const w = window.open(OUT); if (!w) throw new Error('popup blocked'); return w; });
+  await new Promise(res => {
+    const f = document.createElement('form'); f.method = 'POST'; f.action = OUT; f.target = '_blank';
+    document.body.appendChild(f);
+    try { f.submit(); } catch (e) {}
+    setTimeout(() => { log('Submit a form', true, 'no response (checked by the browser test)'); res(); }, 500);
+  });
+  await tryRejects('Camera and microphone', () => navigator.mediaDevices ? navigator.mediaDevices.getUserMedia({ audio: true }) : Promise.reject(new Error('no mediaDevices')));
+  await tryRejects('Geolocation', () => new Promise((res, rej) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(res, e => rej(new Error('geo error ' + e.code)), { timeout: 2000 }) : rej(new Error('none'))));
+
+  // known limitation: the CSP standard has no way to block WebRTC in every browser
+  log('WebRTC peer connection', false, typeof RTCPeerConnection === 'function' ? 'API present; CSP cannot block it, so the review checks the code for it' : 'API not present', 'limitation');
+
+  log('Content Security Policy violations seen', cspViolations > 0, cspViolations + ' violations reported by the browser', 'info');
+  window.parent.postMessage({ protocol: 'zukka-probe/1', results }, '*');
+})();
+</script>
+</body>
+</html>
