@@ -4,7 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { checkGameHtml, hasBlocking, type GameProblem } from "@zukka/engines";
 import { GAME_SDK_SNIPPET } from "@zukka/game-protocol";
 import { z } from "zod";
-import { recordUsage } from "./ai-budget";
+import { anthropicApiKey, recordUsage } from "./ai-budget";
 import { usingEmulators } from "./env";
 import { fakeEdit, fakeGame } from "./fake-ai";
 
@@ -65,7 +65,7 @@ export interface GameResult {
 
 let client: Anthropic | null = null;
 // a busy or overloaded service is retried twice (quickly); the whole generation is still bounded by withTimeout
-const anthropic = () => (client ??= new Anthropic({ timeout: 240_000, maxRetries: 2 }));
+const anthropic = () => (client ??= new Anthropic({ apiKey: anthropicApiKey(), timeout: 240_000, maxRetries: 2 }));
 const fake = () => process.env.ZUKKA_FAKE_AI === "1" && usingEmulators();
 
 export class GameAiError extends Error {
@@ -82,8 +82,8 @@ export function explainAiError(e: unknown): unknown {
   const text = `${e.apiMessage ?? ""} ${e.message}`.toLowerCase();
   if (e instanceof Anthropic.APIConnectionTimeoutError) return new GameAiError("The AI took too long to answer. Please try again, maybe with a simpler game.", detail);
   if (e instanceof Anthropic.APIConnectionError) return new GameAiError("Zukka could not reach the AI service. Please try again in a few minutes.", detail);
-  if (text.includes("credit balance") || text.includes("billing")) return new GameAiError("AI creation is paused: the AI account has run out of credit. The Zukka team has been told.", detail);
-  if (e.status === 401 || e.status === 403) return new GameAiError("AI creation is not set up correctly (the AI key was refused). The Zukka team has been told.", detail);
+  if (text.includes("credit balance") || text.includes("billing")) return new GameAiError("AI creation is paused: the AI account has run out of credit. Please tell the Zukka team.", detail);
+  if (e.status === 401 || e.status === 403) return new GameAiError("AI creation is not set up correctly (the AI key was refused). Please tell the Zukka team.", detail);
   if (e.status === 429 || e.status === 529 || (e.status ?? 0) >= 500) return new GameAiError("The AI service is very busy right now. Please try again in a few minutes.", detail);
   return new GameAiError("The AI service refused the request. Please try again; if it happens again, tell the Zukka team.", detail);
 }

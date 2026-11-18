@@ -4,7 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { topicById, type ExtraQuestions, type SchoolCupQuickForm } from "@zukka/engines";
 import { z } from "zod";
 import { maxFor, verifyItems, verifyWordProblems, WORD_PROBLEM_TOPICS, type AiItem, type AiWordProblem } from "../ai-check";
-import { recordUsage } from "./ai-budget";
+import { anthropicApiKey, recordUsage } from "./ai-budget";
 
 /**
  * Extra questions for a quick game, written by Claude once when the game (or a new version) is saved,
@@ -30,7 +30,7 @@ Rules for everything you write:
 - Exactly one answer is right. The wrong answers must be clearly wrong for someone who knows the topic, but believable.`;
 
 let client: Anthropic | null = null;
-const anthropic = () => (client ??= new Anthropic({ timeout: 90_000, maxRetries: 1 }));
+const anthropic = () => (client ??= new Anthropic({ apiKey: anthropicApiKey(), timeout: 90_000, maxRetries: 1 }));
 
 async function ask<T>(schema: z.ZodType<T>, prompt: string): Promise<T | null> {
   const response = await anthropic().beta.messages.parse({

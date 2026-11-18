@@ -1,6 +1,7 @@
 import { checkGameHtml } from "@zukka/engines";
 import { describe, expect, it } from "vitest";
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropicApiKey } from "../../src/lib/server/ai-budget";
 import { applyEdits, explainAiError, extractHtml, GameAiError } from "../../src/lib/server/ai-games";
 import { fakeEdit, fakeGame } from "../../src/lib/server/fake-ai";
 import { FreeBrief } from "../../src/lib/server/free-games";
@@ -85,5 +86,17 @@ describe("errors from the AI service", () => {
   it("leaves other errors alone", () => {
     const e = new Error("x");
     expect(explainAiError(e)).toBe(e);
+  });
+});
+
+describe("the API key", () => {
+  it.each([["sk-ant-x\n"], ["  sk-ant-x "], ['"sk-ant-x"'], ["'sk-ant-x'"]])("ignores what was pasted around it: %j", (raw) => {
+    const before = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = raw;
+    expect(anthropicApiKey()).toBe("sk-ant-x");
+    process.env.ANTHROPIC_API_KEY = "  ";
+    expect(anthropicApiKey()).toBeUndefined();
+    if (before === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = before;
   });
 });

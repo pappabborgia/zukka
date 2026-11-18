@@ -23,10 +23,16 @@ const PRICE = { input: 4, output: 20 };
 const day = (d = new Date()) => d.toISOString().slice(0, 10);
 const month = (d = new Date()) => d.toISOString().slice(0, 7);
 
+/** The API key as set on the host, without spaces, line breaks or quotes pasted around it by mistake. */
+export function anthropicApiKey(): string | undefined {
+  const k = process.env.ANTHROPIC_API_KEY?.trim().replace(/^["']+|["']+$/g, "").trim();
+  return k || undefined;
+}
+
 /** The AI can be used: a key is set, or (local tests only) the stand-in AI is on. */
-export const aiConfigured = () => !!process.env.ANTHROPIC_API_KEY || (process.env.ZUKKA_FAKE_AI === "1" && usingEmulators());
+export const aiConfigured = () => !!anthropicApiKey() || (process.env.ZUKKA_FAKE_AI === "1" && usingEmulators());
 /** Extra AI questions for quick games need the real AI (no stand-in). */
-export const aiQuestionsConfigured = () => !!process.env.ANTHROPIC_API_KEY;
+export const aiQuestionsConfigured = () => !!anthropicApiKey();
 
 /** Takes one generation from the account's daily allowance (and the game's), if the monthly budget allows. */
 export async function reserveGeneration(uid: string, gameId: string | null, now = new Date()): Promise<void> {

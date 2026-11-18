@@ -69,7 +69,7 @@ describe("multiple-choice items from the AI", () => {
 describe("AI questions end up in a game that works", () => {
   it("with a mocked model: wrong maths is dropped, the rest is stored and valid", async () => {
     vi.resetModules();
-    vi.doMock("../../src/lib/server/ai-budget", () => ({ recordUsage: vi.fn(async () => {}) }));
+    vi.doMock("../../src/lib/server/ai-budget", () => ({ recordUsage: vi.fn(async () => {}), anthropicApiKey: () => "test-key" }));
     vi.doMock("@anthropic-ai/sdk", () => {
       class APIError extends Error {
         status = 0;
