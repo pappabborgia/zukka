@@ -57,6 +57,8 @@ export interface Generation {
   kind: "create" | "change";
   request: string | null;
   message: string | null;
+  /** technical reason of a failure, for the parent to pass on */
+  detail: string | null;
   startedAt: Date;
 }
 
@@ -105,6 +107,7 @@ function generationOf(g: FirebaseFirestore.DocumentData | undefined | null, now 
     kind: g.kind,
     request: g.request ?? null,
     message: lost ? "This took too long and stopped. Please try again." : (g.message ?? null),
+    detail: lost ? "no result after the time limit" : (g.detail ?? null),
     startedAt,
   };
 }

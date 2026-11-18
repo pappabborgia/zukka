@@ -105,6 +105,7 @@ code { background: #f4efe6; padding: 1px 5px; border-radius: 6px; }
 .check { display: flex; gap: 10px; align-items: flex-start; background: #fff; padding: 10px 12px; border-radius: 12px; border: 2px solid #f3e3c8; }
 .check input { width: 22px; height: 22px; margin-top: 2px; flex: none; }
 .form-error { color: var(--bad); font-weight: 600; margin: 0; }
+.error-detail { display: block; margin-top: 0.3rem; font-weight: 400; font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
 .form-ok { color: var(--ok); font-weight: 600; margin: 0; }
 .pin-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .pin-row .field { flex: 1 1 140px; }

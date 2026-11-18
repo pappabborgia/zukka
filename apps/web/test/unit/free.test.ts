@@ -1,6 +1,7 @@
 import { checkGameHtml } from "@zukka/engines";
 import { describe, expect, it } from "vitest";
-import { applyEdits, extractHtml } from "../../src/lib/server/ai-games";
+import Anthropic from "@anthropic-ai/sdk";
+import { applyEdits, explainAiError, extractHtml, GameAiError } from "../../src/lib/server/ai-games";
 import { fakeEdit, fakeGame } from "../../src/lib/server/fake-ai";
 import { FreeBrief } from "../../src/lib/server/free-games";
 
@@ -61,5 +62,28 @@ describe("AI output handling", () => {
   it("the stand-in game used in tests follows the rules", () => {
     expect(checkGameHtml(fakeGame("Test <Game>"))).toEqual([]);
     expect(fakeEdit(fakeGame("Moon Cup"), "make it red please")).toContain("Moon Cup · make it red please");
+  });
+});
+
+describe("errors from the AI service", () => {
+  const api = (status: number, type: string, message: string) =>
+    Anthropic.APIError.generate(status, { type: "error", error: { type, message } }, message, new Headers());
+  it.each([
+    [api(400, "invalid_request_error", "Your credit balance is too low to access the Anthropic API."), /run out of credit/],
+    [api(401, "authentication_error", "invalid x-api-key"), /key was refused/],
+    [api(529, "overloaded_error", "Overloaded"), /very busy/],
+    [api(429, "rate_limit_error", "Too many requests"), /very busy/],
+    [api(400, "invalid_request_error", "something else"), /refused the request/],
+    [new Anthropic.APIConnectionTimeoutError(), /took too long/],
+    [new Anthropic.APIConnectionError({ message: "fetch failed" }), /could not reach/],
+  ])("explains %s to the parent and keeps the reason", (e, expected) => {
+    const out = explainAiError(e);
+    expect(out).toBeInstanceOf(GameAiError);
+    expect((out as GameAiError).message).toMatch(expected);
+    expect((out as GameAiError).detail).toBeTruthy();
+  });
+  it("leaves other errors alone", () => {
+    const e = new Error("x");
+    expect(explainAiError(e)).toBe(e);
   });
 });

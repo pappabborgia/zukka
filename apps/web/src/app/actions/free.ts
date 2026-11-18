@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { BUILTIN_CATALOG } from "@/generated/builtin-catalog";
 import { AiLimitError } from "@/lib/server/ai-budget";
-import { builtinStartHtml, createFreeGame, createRemix, requestChange, runChange, runCreate } from "@/lib/server/free-games";
+import { builtinStartHtml, createFreeGame, createRemix, requestChange, retryCreate, runChange, runCreate } from "@/lib/server/free-games";
 import { StudioError } from "@/lib/server/games";
 import { requireParent } from "@/lib/server/guards";
 import type { FormState } from "./auth";
@@ -108,6 +108,20 @@ export async function askForChange(_prev: FormState, form: FormData): Promise<Fo
     return { error: message(e) };
   }
   after(() => runChange(gameId, request));
+  revalidatePath(`/studio/games/${gameId}`);
+  redirect(`/studio/games/${gameId}`);
+}
+
+/** "Try again" after the first build failed. */
+export async function tryCreateAgain(_prev: FormState, form: FormData): Promise<FormState> {
+  const acc = await requireParent("/studio");
+  const gameId = text(form, "gameId");
+  try {
+    await retryCreate(acc.uid, gameId);
+  } catch (e) {
+    return { error: message(e) };
+  }
+  after(() => runCreate(gameId));
   revalidatePath(`/studio/games/${gameId}`);
   redirect(`/studio/games/${gameId}`);
 }

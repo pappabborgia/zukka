@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createAccount } from "../../src/lib/server/accounts";
 import { adminAuth, db } from "../../src/lib/server/firebase";
-import { builtinStartHtml, createFreeGame, createRemix, requestChange, runChange, runCreate } from "../../src/lib/server/free-games";
+import { builtinStartHtml, createFreeGame, createRemix, requestChange, retryCreate, runChange, runCreate } from "../../src/lib/server/free-games";
 import { getMyGame, listVersions, StudioError } from "../../src/lib/server/games";
 import { STUDIO_LIMITS } from "../../src/lib/config/studio";
 
@@ -120,5 +120,21 @@ describe("free games", () => {
     const g = await getMyGame(uid, gameId);
     expect(g?.generation).toMatchObject({ state: "failed" });
     expect(g?.generation?.message).toContain("took too long");
+  });
+
+  it("a failed first build can be tried again, only by the owner and only once failed", async () => {
+    const uid = await parent("retry@example.com");
+    const other = await parent("other@example.com");
+    const { gameId } = await createFreeGame(uid, brief());
+    expect(await code(retryCreate(uid, gameId))).toBe("busy");
+    await db().doc(`games/${gameId}`).update({ "generation.state": "failed", "generation.message": "x", "generation.detail": "529 · overloaded_error" });
+    expect((await getMyGame(uid, gameId))?.generation).toMatchObject({ state: "failed", detail: "529 · overloaded_error" });
+    expect(await code(retryCreate(other, gameId))).toBe("not_found");
+    await retryCreate(uid, gameId);
+    expect((await getMyGame(uid, gameId))?.generation).toMatchObject({ state: "running", detail: null });
+    await runCreate(gameId);
+    const g = await getMyGame(uid, gameId);
+    expect(g).toMatchObject({ versionCount: 1, generation: { state: "done" } });
+    expect(await code(retryCreate(uid, gameId))).toBe("invalid");
   });
 });

@@ -64,10 +64,29 @@ export interface GameResult {
 }
 
 let client: Anthropic | null = null;
-const anthropic = () => (client ??= new Anthropic({ timeout: 280_000, maxRetries: 0 }));
+// a busy or overloaded service is retried twice (quickly); the whole generation is still bounded by withTimeout
+const anthropic = () => (client ??= new Anthropic({ timeout: 240_000, maxRetries: 2 }));
 const fake = () => process.env.ZUKKA_FAKE_AI === "1" && usingEmulators();
 
-export class GameAiError extends Error {}
+export class GameAiError extends Error {
+  /** short technical reason, shown to the parent under "Details" (never a key or personal data) */
+  constructor(message: string, public detail?: string) {
+    super(message);
+  }
+}
+
+/** Turns an error from the AI service into a message a parent understands, keeping the technical reason. */
+export function explainAiError(e: unknown): unknown {
+  if (!(e instanceof Anthropic.APIError)) return e;
+  const detail = [e.status ?? "no answer", e.type, e.errorCode, e.apiMessage ?? e.message].filter(Boolean).join(" · ").slice(0, 300);
+  const text = `${e.apiMessage ?? ""} ${e.message}`.toLowerCase();
+  if (e instanceof Anthropic.APIConnectionTimeoutError) return new GameAiError("The AI took too long to answer. Please try again, maybe with a simpler game.", detail);
+  if (e instanceof Anthropic.APIConnectionError) return new GameAiError("Zukka could not reach the AI service. Please try again in a few minutes.", detail);
+  if (text.includes("credit balance") || text.includes("billing")) return new GameAiError("AI creation is paused: the AI account has run out of credit. The Zukka team has been told.", detail);
+  if (e.status === 401 || e.status === 403) return new GameAiError("AI creation is not set up correctly (the AI key was refused). The Zukka team has been told.", detail);
+  if (e.status === 429 || e.status === 529 || (e.status ?? 0) >= 500) return new GameAiError("The AI service is very busy right now. Please try again in a few minutes.", detail);
+  return new GameAiError("The AI service refused the request. Please try again; if it happens again, tell the Zukka team.", detail);
+}
 
 /** Takes the HTML document out of the model's text. */
 export function extractHtml(text: string): string | null {
@@ -166,9 +185,13 @@ Write the complete game: start with <!DOCTYPE html>, end with </html>, and write
 /** Writes a new game from the parent's brief. */
 export async function generateGame(b: FreeGameBrief): Promise<GameResult> {
   if (fake()) return { html: fakeGame(b.title), problems: checkGameHtml(fakeGame(b.title)), note: "Made by AI" };
-  const first = await writeWhole(briefText(b));
-  const { html, problems, fixed } = await fixIfNeeded(first);
-  return { html, problems, note: fixed ? "Made by AI (and fixed after the safety check)" : "Made by AI" };
+  try {
+    const first = await writeWhole(briefText(b));
+    const { html, problems, fixed } = await fixIfNeeded(first);
+    return { html, problems, note: fixed ? "Made by AI (and fixed after the safety check)" : "Made by AI" };
+  } catch (e) {
+    throw explainAiError(e);
+  }
 }
 
 /** Changes a game as the parent asked. */
@@ -182,6 +205,14 @@ export async function changeGame(html: string, request: string): Promise<GameRes
     console.error("edit by parts failed", e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e);
     return null;
   });
+  try {
+    return await finishChange(html, request, instruction, parts);
+  } catch (e) {
+    throw explainAiError(e);
+  }
+}
+
+async function finishChange(html: string, request: string, instruction: string, parts: { html: string; summary: string } | null): Promise<GameResult> {
   const changed = parts?.html ?? (await writeWhole(`Here is the current game:\n<game>\n${html}\n</game>\n\n${instruction}\nWrite the complete changed game: start with <!DOCTYPE html>, end with </html>, and write nothing else.`));
   const { html: final, problems, fixed } = await fixIfNeeded(changed);
   const what = parts?.summary || request.slice(0, 80);

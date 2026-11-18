@@ -190,6 +190,19 @@ export function builtinStartHtml(id: string): string | null {
   return Object.hasOwn(BUILTIN_HTML, id) ? BUILTIN_HTML[id] : null;
 }
 
+/** A first build that failed is tried again with the same answers. The AI runs afterwards (call runCreate in after()). */
+export async function retryCreate(uid: string, gameId: string): Promise<void> {
+  const game = await getMyGame(uid, gameId);
+  if (!game || game.kind !== "free") throw new StudioError("not_found");
+  if (game.generation?.state === "running") throw new StudioError("busy");
+  if (game.currentVersionId || game.generation?.state !== "failed" || game.generation.kind !== "create") throw new StudioError("invalid", "this game has nothing to try again");
+  await reserveGeneration(uid, gameId);
+  await games().doc(gameId).update({
+    generation: { state: "running", kind: "create", request: null, message: null, detail: null, startedAt: FieldValue.serverTimestamp() },
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
 /** Asks for a change. The AI runs afterwards (call runChange in after()). */
 export async function requestChange(uid: string, gameId: string, rawRequest: unknown): Promise<string> {
   const parsed = ChangeRequest.safeParse(rawRequest);
@@ -232,6 +245,7 @@ async function saveResult(gameId: string, result: GameResult): Promise<void> {
       versionCount: n,
       "generation.state": "done",
       "generation.message": null,
+      "generation.detail": null,
       updatedAt: now,
     });
   });
@@ -240,9 +254,10 @@ async function saveResult(gameId: string, result: GameResult): Promise<void> {
 async function fail(gameId: string, e: unknown): Promise<void> {
   console.error(`free game ${gameId}: generation failed`, e);
   const message = e instanceof GameAiError ? e.message : "Something went wrong while the AI was working. Please try again.";
+  const detail = e instanceof GameAiError ? (e.detail ?? null) : String((e as Error)?.message ?? e).slice(0, 300);
   await games()
     .doc(gameId)
-    .update({ "generation.state": "failed", "generation.message": message, updatedAt: FieldValue.serverTimestamp() })
+    .update({ "generation.state": "failed", "generation.message": message, "generation.detail": detail, updatedAt: FieldValue.serverTimestamp() })
     .catch(() => {});
 }
 

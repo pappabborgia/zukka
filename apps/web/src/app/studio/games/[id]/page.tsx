@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { askForChange } from "@/app/actions/free";
+import { askForChange, tryCreateAgain } from "@/app/actions/free";
 import { chooseVersion, removeDraft } from "@/app/actions/studio";
+import { ActionForm } from "@/components/ActionForm";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { ChangeBox } from "@/components/ChangeBox";
 import { GameHost } from "@/components/GameHost";
@@ -87,7 +88,13 @@ export default async function StudioGamePage({ params }: { params: Promise<{ id:
         {failed && (
           <p className="form-error" role="alert" data-testid="ai-failed">
             {failed.message ?? "The AI could not finish."} {game.currentVersionId ? "Your game is as it was before." : ""}
+            {failed.detail && <small className="error-detail" data-testid="ai-failed-detail">Details: {failed.detail}</small>}
           </p>
+        )}
+        {failed && failed.kind === "create" && !game.currentVersionId && editable && aiConfigured() && (
+          <ActionForm action={tryCreateAgain} submitLabel="Try again" pendingLabel="Starting…" testId="try-again">
+            <input type="hidden" name="gameId" value={id} />
+          </ActionForm>
         )}
 
         {game.kind === "free" ? (
