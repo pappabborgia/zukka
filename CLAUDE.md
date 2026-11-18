@@ -13,6 +13,9 @@ UI and games are in English (British). Code, comments and commit messages in Eng
 - Studio (`/studio`, parent area): quick games stored in Firestore `games/{id}/versions/{vid}` (config as JSON text);
   the games origin serves `/v/{gameId}/{versionId}` only while the game's status allows it (re-checked every 2 min,
   60 s CDN cache): removed, rejected or deleted games stop within minutes. See `docs/STUDIO.md`.
+- Free creation: wizard `components/FreeGameWizard.tsx` -> `lib/server/free-games.ts` (brief, versions, generation state)
+  -> `lib/server/ai-games.ts` (whole game streamed; changes as find/replace edits; one auto-fix pass) ; static checks in
+  `packages/engines/src/static-check.ts`. Generation runs in `after()`; tests use `ZUKKA_FAKE_AI=1` (emulators only).
 - AI questions: `lib/server/ai-questions.ts` (Claude Opus 5.5, structured output, refusal fallback), checks in
   `lib/ai-check.ts` (maths answers recomputed by code), limits and budget in `lib/server/ai-budget.ts` and `lib/config/studio.ts`.
 - `games/<id>/meta.json` (+ `game.html`, or `"engine"`): built-in games, bundled by `scripts/build-games.mjs`

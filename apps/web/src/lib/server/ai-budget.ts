@@ -1,6 +1,7 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { STUDIO_LIMITS } from "../config/studio";
+import { usingEmulators } from "./env";
 import { db } from "./firebase";
 import { mailerConfigured, sendEmail } from "./mailer";
 
@@ -22,7 +23,10 @@ const PRICE = { input: 4, output: 20 };
 const day = (d = new Date()) => d.toISOString().slice(0, 10);
 const month = (d = new Date()) => d.toISOString().slice(0, 7);
 
-export const aiConfigured = () => !!process.env.ANTHROPIC_API_KEY;
+/** The AI can be used: a key is set, or (local tests only) the stand-in AI is on. */
+export const aiConfigured = () => !!process.env.ANTHROPIC_API_KEY || (process.env.ZUKKA_FAKE_AI === "1" && usingEmulators());
+/** Extra AI questions for quick games need the real AI (no stand-in). */
+export const aiQuestionsConfigured = () => !!process.env.ANTHROPIC_API_KEY;
 
 /** Takes one generation from the account's daily allowance (and the game's), if the monthly budget allows. */
 export async function reserveGeneration(uid: string, gameId: string | null, now = new Date()): Promise<void> {

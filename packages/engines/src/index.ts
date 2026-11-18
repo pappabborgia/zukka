@@ -3,6 +3,7 @@ import { SchoolCupConfig } from "./school-cup/schema";
 import { StarfishRaceConfig } from "./starfish-race/schema";
 
 export * from "./config-block";
+export * from "./static-check";
 export * from "./text";
 export * from "./school-cup/schema";
 export * from "./school-cup/topics";

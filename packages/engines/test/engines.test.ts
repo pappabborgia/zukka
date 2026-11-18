@@ -174,3 +174,49 @@ describe("quick games really play", () => {
     expect(errors).toEqual([]);
   }, 120_000);
 });
+
+describe("static check of game HTML", () => {
+  const ok = (body: string) => `<!DOCTYPE html><html><head><title>t</title></head><body><script>
+const Zukka = { s: () => parent.postMessage({protocol:'zukka/1', event:'game_started'}, '*') };
+// events: 'game_started' 'answer' 'game_completed'
+${body}
+</script></body></html>`;
+  it("passes our own games", async () => {
+    const { checkGameHtml } = await import("../src");
+    expect(checkGameHtml(SC).filter((p) => p.severity === "blocking")).toEqual([]);
+    expect(checkGameHtml(SR)).toEqual([]);
+    expect(checkGameHtml(ok("let x = 1;"))).toEqual([]);
+  });
+  it.each([
+    ["fetch('/x')", "network_fetch"],
+    ["new XMLHttpRequest()", "network_xhr"],
+    ["new WebSocket('wss://a')", "network_websocket"],
+    ["navigator.sendBeacon('/a')", "network_beacon"],
+    ["new RTCPeerConnection()", "network_webrtc"],
+    ["import('x')", "dynamic_import"],
+    ["eval('1')", "eval"],
+    ["setTimeout('alert(1)', 10)", "eval"],
+    ["localStorage.setItem('a','b')", "storage"],
+    ["document.cookie", "storage"],
+    ["window.open('x')", "popup"],
+    ["top.location = 'x'", "navigation"],
+    ["parent.document.body", "parent_access"],
+    ["new Worker('w.js')", "workers"],
+    ["navigator.mediaDevices.getUserMedia({})", "device_access"],
+    ["const img = 'https://example.com/a.png'", "web_address"],
+  ])("finds %s", async (code, expected) => {
+    const { checkGameHtml } = await import("../src");
+    expect(checkGameHtml(ok(code)).map((p) => p.code)).toContain(expected);
+  });
+  it("finds external resources, links, forms and missing events", async () => {
+    const { checkGameHtml } = await import("../src");
+    const codes = checkGameHtml(`<!DOCTYPE html><html><head><link rel="stylesheet" href="https://cdn.example.com/a.css"></head>
+<body><a href="https://example.com">x</a><form></form><img src="//example.com/a.png"></body></html>`).map((p) => p.code);
+    expect(codes).toEqual(expect.arrayContaining(["external_resource", "external_link", "form", "no_events", "missing_game_started"]));
+    expect(checkGameHtml("hello").map((p) => p.code)).toContain("not_a_document");
+  });
+  it("allows the SVG namespace address", async () => {
+    const { checkGameHtml } = await import("../src");
+    expect(checkGameHtml(ok("document.createElementNS('http://www.w3.org/2000/svg','svg')"))).toEqual([]);
+  });
+});

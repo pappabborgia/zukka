@@ -8,6 +8,7 @@ import {
   SchoolCupConfig,
   SchoolCupQuickForm,
   type ExtraQuestions,
+  type GameProblem,
   type SchoolCupQuickForm as QuickForm,
 } from "@zukka/engines";
 import { ENGINE_DEFAULTS } from "@/generated/engine-defaults";
@@ -27,7 +28,7 @@ import { db } from "./firebase";
 export type GameStatus = "draft" | "submitted" | "ai_reviewed" | "changes_requested" | "approved" | "rejected" | "removed";
 
 export class StudioError extends Error {
-  constructor(public code: "invalid" | "too_many_drafts" | "too_many_versions" | "not_found" | "not_editable" | "too_large" | "blocked_word" | "personal_data" | "protected_name", public detail?: string) {
+  constructor(public code: "invalid" | "too_many_drafts" | "too_many_versions" | "not_found" | "not_editable" | "too_large" | "blocked_word" | "personal_data" | "protected_name" | "busy", public detail?: string) {
     super(code);
   }
 }
@@ -38,14 +39,29 @@ export interface GameSummary {
   kind: "quick" | "free";
   engine: string | null;
   subject: string;
-  year: number;
+  year: number | "other";
   status: GameStatus;
   parentGameId: string | null;
-  currentVersionId: string;
+  /** null while the first version of a free game is being written */
+  currentVersionId: string | null;
   versionCount: number;
   createdAt: Date;
   updatedAt: Date;
+  /** free games: what the parent asked for, and the AI at work */
+  description: string | null;
+  generation: Generation | null;
 }
+
+export interface Generation {
+  state: "running" | "done" | "failed";
+  kind: "create" | "change";
+  request: string | null;
+  message: string | null;
+  startedAt: Date;
+}
+
+/** A generation that runs longer than this is considered lost (the server stopped). */
+export const GENERATION_TIMEOUT_MS = 6 * 60_000;
 
 export interface GameVersion {
   id: string;
@@ -55,6 +71,7 @@ export interface GameVersion {
   bytes: number;
   note: string;
   createdAt: Date;
+  problems: GameProblem[];
 }
 
 const toDate = (v: unknown) => (v instanceof Timestamp ? v.toDate() : new Date(0));
@@ -70,10 +87,25 @@ function summary(id: string, d: FirebaseFirestore.DocumentData): GameSummary {
     year: d.year,
     status: d.status,
     parentGameId: d.parentGameId ?? null,
-    currentVersionId: d.currentVersionId,
+    currentVersionId: d.currentVersionId ?? null,
     versionCount: d.versionCount ?? 1,
     createdAt: toDate(d.createdAt),
     updatedAt: toDate(d.updatedAt),
+    description: d.description ?? null,
+    generation: generationOf(d.generation),
+  };
+}
+
+function generationOf(g: FirebaseFirestore.DocumentData | undefined | null, now = Date.now()): Generation | null {
+  if (!g) return null;
+  const startedAt = toDate(g.startedAt);
+  const lost = g.state === "running" && now - startedAt.getTime() > GENERATION_TIMEOUT_MS;
+  return {
+    state: lost ? "failed" : g.state,
+    kind: g.kind,
+    request: g.request ?? null,
+    message: lost ? "This took too long and stopped. Please try again." : (g.message ?? null),
+    startedAt,
   };
 }
 
@@ -224,7 +256,7 @@ export async function listVersions(uid: string, gameId: string): Promise<GameVer
   const snap = await games().doc(gameId).collection("versions").orderBy("n", "desc").get();
   return snap.docs.map((d) => {
     const v = d.data();
-    return { id: d.id, n: v.n, kind: v.kind, engine: v.engine ?? null, bytes: v.bytes, note: v.note ?? "", createdAt: toDate(v.createdAt) };
+    return { id: d.id, n: v.n, kind: v.kind, engine: v.engine ?? null, bytes: v.bytes, note: v.note ?? "", createdAt: toDate(v.createdAt), problems: v.problems ?? [] };
   });
 }
 

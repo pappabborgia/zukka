@@ -46,6 +46,8 @@ export default defineConfig({
         FIREBASE_PROJECT_ID: "demo-zukka",
         FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
         FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",
+        // the stand-in AI (works only with the emulators): no API calls, no cost
+        ZUKKA_FAKE_AI: "1",
       },
       reuseExistingServer: !process.env.CI,
     },

@@ -5,7 +5,7 @@ import { saveQuickVersion } from "@/app/actions/studio";
 import { QuickGameForm, type QuickValues } from "@/components/QuickGameForm";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getMyGame } from "@/lib/server/games";
-import { aiConfigured } from "@/lib/server/ai-budget";
+import { aiQuestionsConfigured } from "@/lib/server/ai-budget";
 import { requireParent } from "@/lib/server/guards";
 import { PATTERNS, TEAM_COLOURS, TIMES_TABLES, TOPIC_CHOICES } from "@/lib/studio-ui";
 
@@ -37,7 +37,7 @@ export default async function EditQuickGamePage({ params }: { params: Promise<{ 
           patterns={PATTERNS}
           tables={TIMES_TABLES}
           initial={game.quickForm as QuickValues}
-          aiAvailable={aiConfigured()}
+          aiAvailable={aiQuestionsConfigured()}
           hidden={{ gameId: id }}
         />
       </main>

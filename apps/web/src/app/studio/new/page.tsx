@@ -33,10 +33,11 @@ export default async function NewGamePage() {
         </div>
 
         <h2>2. Describe a brand new game</h2>
-        <div className="card muted-card">
-          <h3>Coming next</h3>
-          <p>Describe any game in your own words and the AI builds it. This arrives in the next update of the Studio.</p>
-        </div>
+        <Link href="/studio/new/free" className="card" data-testid="free-card">
+          <h3>✨ Describe your game</h3>
+          <p>Five short steps: the idea, what it teaches, the world and its characters, how it plays. Then the AI builds it, and you can change it as much as you like.</p>
+          <span className="cta">Start describing</span>
+        </Link>
 
         <h2>3. Make your own version of a game</h2>
         <p>Start from a game in the catalogue. The original never changes: you get a new game of your own.</p>
@@ -50,11 +51,11 @@ export default async function NewGamePage() {
                 <span className="cta">Make your own version</span>
               </Link>
             ) : (
-              <div key={g.id} className="card muted-card">
+              <Link key={g.id} href={`/studio/new/free?from=${g.id}`} className="card" data-testid="remix-card">
                 <h3>{g.title}</h3>
                 <p>{g.description}</p>
-                <small className="hint">Its own version will be possible with &quot;Describe a brand new game&quot;, in the next update.</small>
-              </div>
+                <span className="cta">Make your own version</span>
+              </Link>
             );
           })}
         </div>

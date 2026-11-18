@@ -6,7 +6,7 @@ import { createQuick } from "@/app/actions/studio";
 import { QuickGameForm } from "@/components/QuickGameForm";
 import { SiteHeader } from "@/components/SiteHeader";
 import { parentGameInfo } from "@/lib/server/games";
-import { aiConfigured } from "@/lib/server/ai-budget";
+import { aiQuestionsConfigured } from "@/lib/server/ai-budget";
 import { requireParent } from "@/lib/server/guards";
 import { NEW_QUICK_DEFAULTS, PATTERNS, TEAM_COLOURS, TIMES_TABLES, TOPIC_CHOICES } from "@/lib/studio-ui";
 
@@ -38,7 +38,7 @@ export default async function NewQuickGamePage({ params, searchParams }: { param
           patterns={PATTERNS}
           tables={TIMES_TABLES}
           initial={NEW_QUICK_DEFAULTS}
-          aiAvailable={aiConfigured()}
+          aiAvailable={aiQuestionsConfigured()}
           hidden={{ engine, parentGameId: parent?.engine === engine ? parent.id : "" }}
         />
       </main>

@@ -2,7 +2,7 @@
 
 Giochi didattici per bambini di 6-9 anni, creati dai genitori con l'aiuto dell'AI.
 
-**Stato: Fase 3** (Studio: giochi da un modello, School Cup configurabile, domande AI). Fasi 1-2: formato dei giochi, sandbox, account, profili, area genitore.
+**Stato: Fase 4** (creazione libera con procedura guidata e modifiche con l'AI). Fasi 1-3: formato dei giochi, sandbox, account, profili, area genitore, Studio con School Cup configurabile e domande AI.
 
 ## Struttura
 

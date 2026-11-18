@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { SchoolCupQuickForm, type ExtraQuestions } from "@zukka/engines";
-import { AiLimitError, aiConfigured, reserveGeneration } from "@/lib/server/ai-budget";
+import { AiLimitError, aiQuestionsConfigured, reserveGeneration } from "@/lib/server/ai-budget";
 import { generateExtras } from "@/lib/server/ai-questions";
 import { addQuickVersion, createQuickGame, deleteDraft, parentGameInfo, restoreVersion, StudioError } from "@/lib/server/games";
 import { requireParent } from "@/lib/server/guards";
@@ -60,7 +60,7 @@ function quickFormFrom(form: FormData) {
  * Returns nothing when the box is not ticked or the form is not valid yet (the save reports the form error).
  */
 async function aiExtras(uid: string, gameId: string | null, form: FormData): Promise<{ extra?: ExtraQuestions; note?: string }> {
-  if (form.get("ai") !== "on" || !aiConfigured()) return {};
+  if (form.get("ai") !== "on" || !aiQuestionsConfigured()) return {};
   const parsed = SchoolCupQuickForm.safeParse(quickFormFrom(form));
   if (!parsed.success) return {};
   await reserveGeneration(uid, gameId);
